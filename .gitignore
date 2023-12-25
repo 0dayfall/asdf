@@ -22,3 +22,7 @@ go.work
 
 # Mac file
 .DS_Store
+
+# Key files
+*.crt
+*.key
