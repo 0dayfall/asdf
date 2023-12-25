@@ -13,8 +13,11 @@ COPY ./data/data.json /data/data.json
 # Build the Go app
 RUN go build -o main ./cmd/asdf
 
-# Expose the port (this is for documentation purposes)
+# Expose env variables (this is for documentation purposes)
 EXPOSE $PORT
+EXPOSE $SSL_CERT_PATH
+EXPOSE $SSL_KEY_PATH
+EXPOSE $SESSION_KEY
 
 # Run the binary program produced by `go install`
 CMD ["/app/main"]   

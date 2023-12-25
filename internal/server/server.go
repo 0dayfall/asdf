@@ -13,8 +13,6 @@ import (
 	"path"
 	"syscall"
 	"time"
-
-	"github.com/gorilla/sessions"
 )
 
 const WELL_KNOWN_WEBFINGER = "/.well-known/webfinger"
@@ -23,7 +21,7 @@ func init() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 }
 
-func Start(addr string, sessionKey string) {
+func Start(addr, certPath, keyPath string) {
 	stopChan := make(chan os.Signal, 1)
 	signal.Notify(stopChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 
@@ -33,7 +31,9 @@ func Start(addr string, sessionKey string) {
 		log.Fatalf("Error loading data: %v", loadDataErr)
 	}
 
-	store := sessions.NewCookieStore([]byte(sessionKey))
+	// store := sessions.NewCookieStore([]byte(sessionKey))
+	// http.HandleFunc("/login", rest.LoginHandler)
+	// http.HandleFunc("/logout", rest.LogoutHandler)
 
 	webFingerHandler := &rest.WebFingerHandler{Data: db}
 	http.Handle(WELL_KNOWN_WEBFINGER, webFingerHandler)
@@ -53,7 +53,7 @@ func Start(addr string, sessionKey string) {
 	}
 
 	go func() {
-		httpServerErr := server.ListenAndServe()
+		httpServerErr := server.ListenAndServeTLS(certPath, keyPath)
 		if httpServerErr == http.ErrServerClosed {
 			log.Print(httpServerErr)
 		} else {
@@ -64,6 +64,7 @@ func Start(addr string, sessionKey string) {
 	<-stopChan
 	log.Println("Shutting down server gracefully..")
 	db.SaveData(path.Join("data", "data.json"))
+	log.Println("Saved data to disk")
 	shutdownErr := server.Shutdown(ctx)
 	if shutdownErr != nil {
 		log.Println("Error shutting down: ", shutdownErr)

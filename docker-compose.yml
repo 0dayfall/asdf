@@ -4,6 +4,7 @@ services:
     build: .
     volumes:
       - asdf-data:/data
+      - asdf-data:/certs
     ports:
       - "${PORT}:${PORT}"
     env_file:

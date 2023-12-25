@@ -12,10 +12,11 @@ func main() {
 		log.Fatal("$PORT must be set")
 	}
 
-	sessionKey := os.Getenv("SESSION_KEY")
-	if sessionKey == "" {
-		log.Fatal("$SESSION_KEY environment variable is not set")
+	certPath := os.Getenv("SSL_CERT_PATH")
+	keyPath := os.Getenv("SSL_KEY_PATH")
+	if certPath == "" || keyPath == "" {
+		log.Fatal("SSL certificate or key path not set in environment variables")
 	}
 
-	server.Start(":"+port, sessionKey)
+	server.Start(":"+port, certPath, keyPath)
 }
