@@ -11,7 +11,7 @@ var templatePath = path.Join("web", "template")
 var accountTmpl *template.Template
 var searchTmpl *template.Template
 
-func init() {
+func LoadTemplates() {
 	accountTmpl = template.Must(template.ParseFiles(path.Join(templatePath, "account.html")))
 	searchTmpl = template.Must(template.ParseFiles(path.Join(templatePath, "search.html")))
 }

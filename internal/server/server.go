@@ -33,8 +33,9 @@ func Start(addr string) {
 	}
 
 	webFingerHandler := &rest.WebFingerHandler{Data: db}
-
 	http.Handle(WELL_KNOWN_WEBFINGER, webFingerHandler)
+
+	rest.LoadTemplates()
 	http.HandleFunc("/", webFingerHandler.HTMLHandler)
 
 	ctx, cancel := context.WithCancel(context.Background())

@@ -22,7 +22,8 @@ func TestGETResource(t *testing.T) {
 		wfh := WebFingerHandler{Data: db}
 
 		rr := httptest.NewRecorder()
-		request, _ := http.NewRequest(http.MethodGet, "/.well-known/webfinger?resource=acct:example@example.com", nil)
+		request, err := http.NewRequest(http.MethodGet, "/.well-known/webfinger?resource=acct:example@example.com", nil)
+		require.NoError(t, err)
 
 		// Act
 		wfh.ServeHTTP(rr, request)
@@ -37,6 +38,12 @@ func TestGETResource(t *testing.T) {
 		var jrd api.JRD
 		err = json.Unmarshal(body, &jrd)
 		require.NoError(t, err)
-		require.EqualValues(t, "", jrd)
+
+		var expected api.JRD
+		expectedJSON := `{"subject":"acct:example@example.com","aliases":["http://example.com/profile/example"],"properties":{"http://example.com/prop/name":"Example User"},"links":[{"rel":"http://webfinger.net/rel/profile-page","type":"text/html","href":"http://example.com/profile/example"},{"rel":"http://example.com/rel/blog","type":"text/html","href":"http://blogs.example.com/example/"}]}`
+		err = json.Unmarshal([]byte(expectedJSON), &expected)
+		require.NoError(t, err)
+
+		require.EqualValues(t, expected, jrd)
 	})
 }

@@ -47,5 +47,8 @@ func writeResponse(w http.ResponseWriter, content *api.JRD) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	buf.WriteTo(w)
+	if _, err := buf.WriteTo(w); err != nil {
+		log.Printf("Error writing body: %v", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+	}
 }
