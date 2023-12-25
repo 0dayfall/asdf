@@ -1,0 +1,44 @@
+[
+    {
+        "subject": "acct:example@example.com",
+        "aliases": [
+            "http://example.com/profile/example"
+        ],
+        "properties": {
+            "http://example.com/prop/name": "Example User"
+        },
+        "links": [
+            {
+                "rel": "http://webfinger.net/rel/profile-page",
+                "type": "text/html",
+                "href": "http://example.com/profile/example"
+            },
+            {
+                "rel": "http://example.com/rel/blog",
+                "type": "text/html",
+                "href": "http://blogs.example.com/example/"
+            }
+        ]
+    },
+    {
+        "subject": "acct:another@example.com",
+        "aliases": [
+            "http://example.com/profile/another"
+        ],
+        "properties": {
+            "http://example.com/prop/name": "Another User"
+        },
+        "links": [
+            {
+                "rel": "http://webfinger.net/rel/profile-page",
+                "type": "text/html",
+                "href": "http://example.com/profile/another"
+            },
+            {
+                "rel": "http://example.com/rel/blog",
+                "type": "text/html",
+                "href": "http://blogs.example.com/another/"
+            }
+        ]
+    }
+]
