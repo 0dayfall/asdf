@@ -18,9 +18,10 @@ func NewData() *Data {
 }
 
 func (app *Data) LoadData(fileName string) error {
+	dir, _ := os.Getwd()
 	file, err := os.Open(fileName)
 	if err != nil {
-		log.Printf("Error opening file: %v", err)
+		log.Printf("Error opening file: %s", err.Error()+dir)
 		return errors.New("Error loading file")
 	}
 	defer file.Close()

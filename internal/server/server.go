@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path"
 	"syscall"
 	"time"
 
@@ -17,12 +18,16 @@ import (
 
 const WELL_KNOWN_WEBFINGER = "/.well-known/webfinger"
 
+func init() {
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
+}
+
 func Start(addr string) {
 	stopChan := make(chan os.Signal, 1)
 	signal.Notify(stopChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 
 	db := db.NewData()
-	loadDataErr := db.LoadData("data.json")
+	loadDataErr := db.LoadData(path.Join("data", "data.json"))
 	if loadDataErr != nil {
 		log.Fatalf("Error loading data: %v", loadDataErr)
 	}
@@ -44,7 +49,8 @@ func Start(addr string) {
 	}
 
 	go func() {
-		httpServerErr := server.ListenAndServeTLS("cert.pem", "key.pem")
+		//httpServerErr := server.ListenAndServeTLS("cert.pem", "key.pem")
+		httpServerErr := server.ListenAndServe()
 		if httpServerErr == http.ErrServerClosed {
 			log.Print(httpServerErr)
 		} else {

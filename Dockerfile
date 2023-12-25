@@ -7,8 +7,11 @@ WORKDIR /app
 # Copy the local package files to the container's workspace
 COPY . .
 
+# Copy the data file to the container's workspace
+COPY ./data/data.json /data/data.json
+
 # Build the Go app
-RUN go build -o main ./cmd
+RUN go build -o main ./cmd/asdf
 
 # Expose the port (this is for documentation purposes)
 EXPOSE $PORT

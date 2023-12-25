@@ -1,8 +1,13 @@
-version: '3'
+version: '3.8'
 services:
   web:
     build: .
+    volumes:
+      - asdf-data:/data
     ports:
       - "${PORT}:${PORT}"
     env_file:
       - .env
+
+volumes:
+  asdf-data:

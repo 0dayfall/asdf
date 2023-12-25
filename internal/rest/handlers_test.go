@@ -2,14 +2,19 @@ package rest
 
 import (
 	"asdf/internal/db"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path"
 	"testing"
 )
 
 func TestFinger(t *testing.T) {
+	dir, _ := os.Getwd()
+	fmt.Println("Current working directory:", dir)
 	db := db.NewData()
-	err := db.LoadData("../../../db.json")
+	err := db.LoadData(path.Join("test", "data.json"))
 	if err != nil {
 		t.Errorf("Setup failed %v", err)
 	}
@@ -23,7 +28,7 @@ func TestFinger(t *testing.T) {
 	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
 	rr := httptest.NewRecorder()
 
-	wfh := WebFingerHandler{Data: nil}
+	wfh := WebFingerHandler{Data: db}
 	wfh.ServeHTTP(rr, req)
 
 	// Check the status code is what we expect.

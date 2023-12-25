@@ -6,7 +6,7 @@ import (
 	"text/template"
 )
 
-const templatePath = "template"
+var templatePath = path.Join("web", "template")
 
 var accountTmpl *template.Template
 var searchTmpl *template.Template
