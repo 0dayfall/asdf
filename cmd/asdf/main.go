@@ -1,10 +1,9 @@
 package main
 
 import (
+	"asdf/internal/server"
 	"log"
 	"os"
-
-	fingerServer "github.com/0dayfall/asdf"
 )
 
 func main() {
@@ -13,5 +12,5 @@ func main() {
 		log.Fatal("$PORT must be set")
 	}
 
-	fingerServer.Start(":" + port)
+	server.Start(":" + port)
 }

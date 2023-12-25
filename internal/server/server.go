@@ -1,4 +1,4 @@
-package asdf
+package server
 
 import (
 	"context"
