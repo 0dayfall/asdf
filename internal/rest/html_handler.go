@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"path"
 	"text/template"
+
+	"github.com/gorilla/sessions"
 )
 
 var templatePath = path.Join("web", "template")
@@ -14,6 +16,10 @@ var searchTmpl *template.Template
 func LoadTemplates() {
 	accountTmpl = template.Must(template.ParseFiles(path.Join(templatePath, "account.html")))
 	searchTmpl = template.Must(template.ParseFiles(path.Join(templatePath, "search.html")))
+}
+
+type HTMLHandler struct {
+	store *sessions.CookieStore
 }
 
 func (wfh *WebFingerHandler) HTMLHandler(w http.ResponseWriter, r *http.Request) {

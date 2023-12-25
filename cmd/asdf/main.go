@@ -12,5 +12,10 @@ func main() {
 		log.Fatal("$PORT must be set")
 	}
 
-	server.Start(":" + port)
+	sessionKey := os.Getenv("SESSION_KEY")
+	if sessionKey == "" {
+		log.Fatal("$SESSION_KEY environment variable is not set")
+	}
+
+	server.Start(":"+port, sessionKey)
 }

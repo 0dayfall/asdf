@@ -1,6 +1,8 @@
 package server
 
 import (
+	"asdf/internal/db"
+	"asdf/internal/rest"
 	"context"
 	"crypto/tls"
 	"log"
@@ -12,8 +14,7 @@ import (
 	"syscall"
 	"time"
 
-	"asdf/internal/db"
-	"asdf/internal/rest"
+	"github.com/gorilla/sessions"
 )
 
 const WELL_KNOWN_WEBFINGER = "/.well-known/webfinger"
@@ -22,7 +23,7 @@ func init() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 }
 
-func Start(addr string) {
+func Start(addr string, sessionKey string) {
 	stopChan := make(chan os.Signal, 1)
 	signal.Notify(stopChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 
@@ -31,6 +32,8 @@ func Start(addr string) {
 	if loadDataErr != nil {
 		log.Fatalf("Error loading data: %v", loadDataErr)
 	}
+
+	store := sessions.NewCookieStore([]byte(sessionKey))
 
 	webFingerHandler := &rest.WebFingerHandler{Data: db}
 	http.Handle(WELL_KNOWN_WEBFINGER, webFingerHandler)
