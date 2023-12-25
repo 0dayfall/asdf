@@ -24,6 +24,7 @@ openssl req -new -x509 -sha256 -key server.key -out server.crt -days 365
 ```
 
 ## Running
+```
 docker-compose up --build
 ```
 
