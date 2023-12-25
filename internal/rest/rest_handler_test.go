@@ -47,3 +47,24 @@ func TestGETResource(t *testing.T) {
 		require.EqualValues(t, expected, jrd)
 	})
 }
+
+func TestGETResourceEmpty(t *testing.T) {
+	t.Run("Test the web handler", func(t *testing.T) {
+		// Arrange
+		db := db.NewData()
+		err := db.LoadData(path.Join("test", "data.json"))
+		require.NoError(t, err)
+		wfh := WebFingerHandler{Data: db}
+
+		rr := httptest.NewRecorder()
+		request, err := http.NewRequest(http.MethodGet, "/.well-known/webfinger?resource=acct:", nil)
+		require.NoError(t, err)
+
+		// Act
+		wfh.ServeHTTP(rr, request)
+
+		// Assert
+		require.EqualValues(t, http.StatusBadRequest, rr.Code)
+		require.EqualValues(t, "text/plain; charset=utf-8", rr.Header().Get("Content-Type"))
+	})
+}

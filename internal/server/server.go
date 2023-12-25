@@ -50,7 +50,6 @@ func Start(addr string) {
 	}
 
 	go func() {
-		//httpServerErr := server.ListenAndServeTLS("cert.pem", "key.pem")
 		httpServerErr := server.ListenAndServe()
 		if httpServerErr == http.ErrServerClosed {
 			log.Print(httpServerErr)
@@ -61,6 +60,7 @@ func Start(addr string) {
 
 	<-stopChan
 	log.Println("Shutting down server gracefully..")
+	db.SaveData(path.Join("data", "data.json"))
 	shutdownErr := server.Shutdown(ctx)
 	if shutdownErr != nil {
 		log.Println("Error shutting down: ", shutdownErr)
