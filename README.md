@@ -22,7 +22,11 @@ Use openssl to generate certificates
 openssl genrsa -out server.key 2048
 openssl req -new -x509 -sha256 -key server.key -out server.crt -days 365
 ```
-Configure the environment variables in .env
+Configure the environment variables in the .env file. Using JSON Web Tokens require a HMAC Secret which can be generated using:
+
+```
+openssl rand -base64 32
+```
 
 ## Running
 ```

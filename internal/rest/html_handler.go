@@ -40,7 +40,6 @@ func (wfh *WebFingerHandler) HTMLHandler(w http.ResponseWriter, r *http.Request)
 }
 
 func IndexHandler(w http.ResponseWriter, r *http.Request) {
-	// Render Go template
 	err := searchTmpl.Execute(w, nil)
 	if err != nil {
 		http.Error(w, "Error rendering template to search", http.StatusInternalServerError)

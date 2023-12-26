@@ -17,7 +17,7 @@ RUN go build -o main ./cmd/asdf
 EXPOSE $PORT
 EXPOSE $SSL_CERT_PATH
 EXPOSE $SSL_KEY_PATH
-EXPOSE $SESSION_KEY
+EXPOSE $JWT_SECRET
 
 # Run the binary program produced by `go install`
 CMD ["/app/main"]   
