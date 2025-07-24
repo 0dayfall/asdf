@@ -1,9 +1,9 @@
 package rest
 
 import (
-	"asdf/internal/api"
-	"asdf/internal/db"
 	"asdf/internal/resource"
+	"asdf/internal/store"
+	"asdf/internal/types"
 	"bytes"
 	"encoding/json"
 	"log"
@@ -16,7 +16,7 @@ const (
 )
 
 type WebFingerHandler struct {
-	Data *db.Data
+	Data store.Store
 }
 
 func (wfh *WebFingerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -26,19 +26,18 @@ func (wfh *WebFingerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	jrd, err := wfh.Data.LookupResource(acct)
+	jrd, err := wfh.Data.LookupBySubject(r.Context(), acct)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "not found", http.StatusNotFound)
 		return
 	}
 
 	writeResponse(w, jrd)
 }
 
-func writeResponse(w http.ResponseWriter, content *api.JRD) {
+func writeResponse(w http.ResponseWriter, content *types.JRD) {
 	w.Header().Set(ContentType, ContentTypeJRD)
 
-	// Use a buffer, should the encoding fail, we don't want to send a partial response
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(content); err != nil {
 		log.Printf("Error writing body: %v", err)

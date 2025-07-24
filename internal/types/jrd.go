@@ -1,4 +1,4 @@
-package api
+package types
 
 // JRD represents a JSON Resource Descriptor
 type JRD struct {

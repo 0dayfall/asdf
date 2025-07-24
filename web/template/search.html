@@ -1,69 +1,59 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-	<title>Welcome to web finger</title>
-	<style>
-		body {
-			background-color: #ffffcc;
-			color: #000000;
-			font-family: Arial, sans-serif;
-			font-size: 16px;
-			margin: 0;
-			padding: 20px;
-		}
-
-		h1 {
-			color: #ff0000;
-			font-size: 36px;
-			text-align: center;
-			text-shadow: 2px 2px #cccccc;
-		}
-
-		p {
-			margin-bottom: 20px;
-			text-indent: 40px;
-		}
-
-		a {
-			color: #0000ff;
-			text-decoration: underline;
-		}
-
-		table {
-			border-collapse: collapse;
-			margin: 20px 0;
-			width: 100%;
-		}
-
-		th, td {
-			border: 1px solid #000000;
-			padding: 10px;
-			text-align: center;
-		}
-
-		.footer {
-			background-color: #cccccc;
-			border-top: 1px solid #000000;
-			margin-top: 20px;
-			padding: 10px;
-			text-align: center;
-		}
-
-		.center {
-			text-align: center;
-		}
-	</style>
+  <meta charset="UTF-8">
+  <title>WebFinger Retro Search</title>
+  <style>
+    body {
+      background: #2b2b2b;
+      color: #e0e0e0;
+      font-family: 'Courier New', monospace;
+      padding: 40px;
+      text-align: center;
+    }
+    h1 {
+      color: #ff79c6;
+      font-size: 3em;
+      margin-bottom: 1rem;
+      text-shadow: 2px 2px #881337;
+    }
+    form { margin-top: 2rem; }
+    input[type="text"] {
+      width: 300px;
+      padding: 10px;
+      border: 2px solid #6272a4;
+      border-radius: 4px;
+      margin-right: 8px;
+      font-family: monospace;
+    }
+    button {
+      padding: 10px 20px;
+      border: none;
+      background: #50fa7b;
+      color: #282a36;
+      font-size: 1em;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #8be9fd;
+    }
+    .footer {
+      margin-top: 60px;
+      font-size: 0.9em;
+      color: #6272a4;
+    }
+  </style>
 </head>
 <body>
-	<h1>Welcome to web finger!</h1>
-    <p class="center">Use the text field to search for an account:</p>
-    <form class="center" action="/submit" method="POST">
-        <label for="acct">[acct:]</label>
-        <input type="text" id="acct" name="acct">
-        <button type="submit">Submit</button>
-    </form>
-	<div class="footer">
-		<p class="center">&copy; 2023 Web Finger Web Site. All rights reserved.</p>
-	</div>
+  <h1>WebFinger Retro</h1>
+  <p>Enter an acct: URI to find its WebFinger record</p>
+
+  <form action="/.well-known/webfinger" method="POST">
+    <input type="text" id="acct" name="acct" placeholder="acct:username@domain.com" required>
+    <button type="submit">Search</button>
+  </form>
+
+  <div class="footer">&copy; 2025 WebFinger Retro</div>
 </body>
 </html>

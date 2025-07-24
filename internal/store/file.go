@@ -1,8 +1,8 @@
-package db
+package store
 
 import (
-	"asdf/internal/api"
 	"asdf/internal/resource"
+	"asdf/internal/types"
 	"encoding/json"
 	"errors"
 	"log"
@@ -10,7 +10,7 @@ import (
 )
 
 type Data struct {
-	data []api.JRD
+	data []types.JRD
 }
 
 func NewData() *Data {
@@ -34,7 +34,7 @@ func (app *Data) LoadData(fileName string) error {
 	return nil
 }
 
-func (app *Data) LookupResource(subject string) (*api.JRD, error) {
+func (app *Data) LookupResource(subject string) (*types.JRD, error) {
 	for _, jrd := range app.data {
 		acct, err := resource.GetSubject(jrd.Subject)
 		if err != nil {

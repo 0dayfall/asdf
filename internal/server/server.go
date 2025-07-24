@@ -1,18 +1,14 @@
 package server
 
 import (
-	"asdf/internal/db"
 	"asdf/internal/rest"
+	"asdf/internal/store"
 	"context"
-	"crypto/tls"
 	"log"
-	"net"
 	"net/http"
 	"os"
-	"os/signal"
-	"path"
-	"syscall"
-	"time"
+
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 const WELL_KNOWN_WEBFINGER = "/.well-known/webfinger"
@@ -22,53 +18,47 @@ func init() {
 }
 
 func Start(addr, certPath, keyPath string) {
-	stopChan := make(chan os.Signal, 1)
-	signal.Notify(stopChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
-
-	db := db.NewData()
-	loadDataErr := db.LoadData(path.Join("data", "data.json"))
-	if loadDataErr != nil {
-		log.Fatalf("Error loading data: %v", loadDataErr)
+	dsn := os.Getenv("DATABASE_URL")
+	if dsn == "" {
+		log.Fatal("DATABASE_URL not set")
 	}
 
-	// store := sessions.NewCookieStore([]byte(sessionKey))
-	// http.HandleFunc("/login", rest.LoginHandler)
-	// http.HandleFunc("/logout", rest.LogoutHandler)
-
-	webFingerHandler := &rest.WebFingerHandler{Data: db}
-	http.Handle(WELL_KNOWN_WEBFINGER, webFingerHandler)
-
-	rest.LoadTemplates()
-	http.HandleFunc("/", webFingerHandler.HTMLHandler)
-
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	server := &http.Server{
-		Addr:         addr,
-		ReadTimeout:  5 * time.Second,
-		WriteTimeout: 10 * time.Second,
-		IdleTimeout:  15 * time.Second,
-		TLSConfig:    &tls.Config{},
-		BaseContext:  func(listener net.Listener) context.Context { return ctx },
+	pool, err := pgxpool.New(context.Background(), dsn)
+	if err != nil {
+		log.Fatalf("Failed to connect to DB: %v", err)
 	}
+	defer pool.Close()
 
-	go func() {
-		httpServerErr := server.ListenAndServeTLS(certPath, keyPath)
-		if httpServerErr == http.ErrServerClosed {
-			log.Print(httpServerErr)
-		} else {
-			log.Fatalf("HTTPS server error: %v", httpServerErr)
+	s := store.NewPostgresStore(pool)
+
+	if os.Getenv("GO_ENV") == "test" {
+		err = s.InitSchemaAndSeed(context.Background())
+		if err != nil {
+			log.Fatalf("DB setup failed: %v", err)
 		}
-	}()
+	}
 
-	<-stopChan
-	log.Println("Shutting down server gracefully..")
-	db.SaveData(path.Join("data", "data.json"))
-	log.Println("Saved data to disk")
-	shutdownErr := server.Shutdown(ctx)
-	if shutdownErr != nil {
-		log.Println("Error shutting down: ", shutdownErr)
+	mux := http.NewServeMux()
+
+	htmlHandler := &rest.HTMLHandler{Data: s}
+	rest.LoadTemplates()
+
+	mux.Handle("/", htmlHandler)
+
+	if os.Getenv("GO_ENV") == "test" {
+		log.Println("Running in test mode, using HTTP instead of HTTPS")
+		addr = "localhost:8080"
+		err = http.ListenAndServe(addr, mux)
+		if err != nil {
+			log.Fatalf("Server failed: %v", err)
+		}
+		log.Printf("WebFinger server running on %s", addr)
 	} else {
-		log.Println("Server shutdown completed")
+		log.Printf("Running in production mode, serving on %s", addr)
+		err = http.ListenAndServeTLS(addr, certPath, keyPath, mux)
+		if err != nil {
+			log.Fatalf("Server failed: %v", err)
+		}
+		log.Printf("WebFinger server running on %s with TLS", addr)
 	}
 }
