@@ -10,6 +10,7 @@ import (
 
 type Store interface {
 	LookupBySubject(ctx context.Context, subject string) (*types.JRD, error)
+	SearchSubjects(ctx context.Context, query string) ([]string, error)
 }
 
 type PostgresStore struct {
@@ -104,4 +105,27 @@ VALUES ($1, $2, $3, $4, $5, $6);`
 	}
 
 	return nil
+}
+
+func (ps *PostgresStore) SearchSubjects(ctx context.Context, query string) ([]string, error) {
+	rows, err := ps.db.Query(ctx, `
+		SELECT subject
+		FROM users
+		WHERE LOWER(subject) LIKE '%' || $1 || '%'
+		ORDER BY subject ASC
+		LIMIT 25
+	`, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var results []string
+	for rows.Next() {
+		var subject string
+		if err := rows.Scan(&subject); err == nil {
+			results = append(results, subject)
+		}
+	}
+	return results, nil
 }

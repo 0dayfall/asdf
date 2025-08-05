@@ -25,3 +25,13 @@ func (m *MockStore) LookupBySubject(_ context.Context, subject string) (*types.J
 	}
 	return nil, nil
 }
+
+func (m *MockStore) SearchSubjects(_ context.Context, query string) ([]string, error) {
+	var results []string
+	for subject := range m.Records {
+		if query == "" || subject == query {
+			results = append(results, subject)
+		}
+	}
+	return results, nil
+}

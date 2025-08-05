@@ -1,59 +1,90 @@
+{{ define "search" }}
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>WebFinger Retro Search</title>
-  <style>
-    body {
-      background: #2b2b2b;
-      color: #e0e0e0;
-      font-family: 'Courier New', monospace;
-      padding: 40px;
-      text-align: center;
-    }
-    h1 {
-      color: #ff79c6;
-      font-size: 3em;
-      margin-bottom: 1rem;
-      text-shadow: 2px 2px #881337;
-    }
-    form { margin-top: 2rem; }
-    input[type="text"] {
-      width: 300px;
-      padding: 10px;
-      border: 2px solid #6272a4;
-      border-radius: 4px;
-      margin-right: 8px;
-      font-family: monospace;
-    }
-    button {
-      padding: 10px 20px;
-      border: none;
-      background: #50fa7b;
-      color: #282a36;
-      font-size: 1em;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-    button:hover {
-      background: #8be9fd;
-    }
-    .footer {
-      margin-top: 60px;
-      font-size: 0.9em;
-      color: #6272a4;
-    }
-  </style>
+  <meta charset="UTF-8" />
+  <title>WebFinger Search</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="/static/style.css" />
 </head>
 <body>
-  <h1>WebFinger Retro</h1>
-  <p>Enter an acct: URI to find its WebFinger record</p>
+  <div class="container">
+    <h1>WebFinger Search</h1>
+    <input type="text" id="searchBox" placeholder="Search acct: identifiers..." />
+    <div id="results"></div>
+    <div id="profile"></div>
+  </div>
 
-  <form action="/.well-known/webfinger" method="POST">
-    <input type="text" id="acct" name="acct" placeholder="acct:username@domain.com" required>
-    <button type="submit">Search</button>
-  </form>
+  <script>
+    const input = document.getElementById('searchBox');
+    const results = document.getElementById('results');
+    const profile = document.getElementById('profile');
+    let controller = null;
 
-  <div class="footer">&copy; 2025 WebFinger Retro</div>
+    input.addEventListener('input', async () => {
+      const q = input.value.trim();
+      profile.innerHTML = '';
+      if (q.length < 2) {
+        results.innerHTML = '';
+        return;
+      }
+
+      if (controller) controller.abort();
+      controller = new AbortController();
+
+      try {
+        const res = await fetch('/api/search?q=' + encodeURIComponent(q), { signal: controller.signal });
+        const data = await res.json();
+
+        if (data.results.length) {
+          results.innerHTML = data.results.map(r =>
+            `<div class="result" data-acct="${r}">${r}</div>`
+          ).join('');
+        } else {
+          results.innerHTML = '<div class="result">No matches found.</div>';
+        }
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          results.innerHTML = '<div class="result">Search error.</div>';
+        }
+      }
+    });
+
+    results.addEventListener('click', async (e) => {
+      const el = e.target.closest('.result');
+      if (!el || !el.dataset.acct) return;
+
+      const acct = el.dataset.acct;
+      profile.innerHTML = '<pre>Loading...</pre>';
+
+      try {
+        const res = await fetch('/.well-known/webfinger?resource=' + encodeURIComponent(acct));
+        const data = await res.json();
+
+        const aliasList = (data.aliases || []).map(alias =>
+          `<li><a href="${alias}" target="_blank" rel="noopener noreferrer">${alias}</a></li>`
+        ).join('');
+
+        profile.innerHTML = `
+          <div class="card">
+            <div class="card-header">
+              <strong>Subject:</strong> ${data.subject}
+            </div>
+            <div class="card-body">
+              ${aliasList ? `<strong>Aliases:</strong><ul>${aliasList}</ul>` : '<em>No aliases</em>'}
+            </div>
+            <details style="margin-top: 1em;">
+              <summary>Raw JSON</summary>
+              <pre>${JSON.stringify(data, null, 2)}</pre>
+            </details>
+          </div>
+        `;
+
+      } catch (err) {
+        profile.innerHTML = '<pre>Error loading result.</pre>';
+      }
+    });
+  </script>
 </body>
 </html>
+{{ end }}
