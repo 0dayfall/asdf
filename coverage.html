@@ -1,0 +1,3492 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>asdf: Go Coverage Report</title>
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">asdf/cmd/asdf/main.go (0.0%)</option>
+				
+				<option value="file1">asdf/internal/admin/admin_handler.go (0.0%)</option>
+				
+				<option value="file2">asdf/internal/auth/auth.go (0.0%)</option>
+				
+				<option value="file3">asdf/internal/auth/session_store.go (0.0%)</option>
+				
+				<option value="file4">asdf/internal/auth/user_store.go (0.0%)</option>
+				
+				<option value="file5">asdf/internal/cache/redis.go (0.0%)</option>
+				
+				<option value="file6">asdf/internal/config/config.go (0.0%)</option>
+				
+				<option value="file7">asdf/internal/middleware/security.go (0.0%)</option>
+				
+				<option value="file8">asdf/internal/migrations/migrator.go (0.0%)</option>
+				
+				<option value="file9">asdf/internal/monitoring/metrics.go (0.0%)</option>
+				
+				<option value="file10">asdf/internal/resource/resource.go (75.0%)</option>
+				
+				<option value="file11">asdf/internal/rest/auth_handler.go (0.0%)</option>
+				
+				<option value="file12">asdf/internal/rest/html_handler.go (0.0%)</option>
+				
+				<option value="file13">asdf/internal/rest/login.go (0.0%)</option>
+				
+				<option value="file14">asdf/internal/rest/webfinger.go (21.1%)</option>
+				
+				<option value="file15">asdf/internal/server/server.go (0.0%)</option>
+				
+				<option value="file16">asdf/internal/store/file.go (0.0%)</option>
+				
+				<option value="file17">asdf/internal/store/mock.go (0.0%)</option>
+				
+				<option value="file18">asdf/internal/store/store.go (0.0%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">not covered</span>
+				<span class="cov8">covered</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none">package main
+
+import (
+        "asdf/internal/server"
+        "log"
+)
+
+func main() <span class="cov0" title="0">{
+        if err := server.Start(); err != nil </span><span class="cov0" title="0">{
+                log.Fatalf("Server failed to start: %v", err)
+        }</span>
+}
+</pre>
+		
+		<pre class="file" id="file1" style="display: none">package admin
+
+import (
+        "asdf/internal/auth"
+        "asdf/internal/monitoring"
+        "asdf/internal/store"
+        "encoding/json"
+        "net/http"
+        "strconv"
+        "time"
+)
+
+type AdminHandler struct {
+        userStore   auth.UserStore
+        store       store.Store
+        metrics     *monitoring.Metrics
+        authHandler AuthMiddleware // For middleware
+}
+
+type AdminStats struct {
+        UserCount      int           `json:"user_count"`
+        ActiveUsers    int           `json:"active_users"`
+        AdminUsers     int           `json:"admin_users"`
+        RequestsToday  int64         `json:"requests_today"`
+        CacheStats     interface{}   `json:"cache_stats,omitempty"`
+        SystemUptime   time.Duration `json:"system_uptime"`
+        DatabaseStatus string        `json:"database_status"`
+        RedisStatus    string        `json:"redis_status"`
+}
+
+// AuthMiddleware interface for middleware
+type AuthMiddleware interface {
+        AuthMiddleware(next http.Handler) http.Handler
+        RequireAdmin(next http.Handler) http.Handler
+}
+
+// NewAdminHandler creates a new admin handler
+func NewAdminHandler(userStore auth.UserStore, store store.Store, metrics *monitoring.Metrics, authHandler AuthMiddleware) *AdminHandler <span class="cov0" title="0">{
+        return &amp;AdminHandler{
+                userStore:   userStore,
+                store:       store,
+                metrics:     metrics,
+                authHandler: authHandler,
+        }
+}</span>
+
+// RegisterRoutes registers admin routes
+func (h *AdminHandler) RegisterRoutes(mux *http.ServeMux) <span class="cov0" title="0">{
+        // All admin routes require authentication and admin privileges
+        adminHandler := func(handler http.HandlerFunc) http.Handler </span><span class="cov0" title="0">{
+                return h.authHandler.RequireAdmin(h.authHandler.AuthMiddleware(http.HandlerFunc(handler)))
+        }</span>
+
+        <span class="cov0" title="0">mux.Handle("/api/admin/stats", adminHandler(h.HandleStats))
+        mux.Handle("/api/admin/users", adminHandler(h.HandleUsers))
+        mux.Handle("/api/admin/users/", adminHandler(h.HandleUser))
+        mux.Handle("/api/admin/system", adminHandler(h.HandleSystem))</span>
+}
+
+// HandleStats returns system statistics
+func (h *AdminHandler) HandleStats(w http.ResponseWriter, r *http.Request) <span class="cov0" title="0">{
+        if r.Method != http.MethodGet </span><span class="cov0" title="0">{
+                http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+                return
+        }</span>
+
+        <span class="cov0" title="0">ctx := r.Context()
+
+        // Get user counts
+        allUsers, totalUsers, err := h.userStore.ListUsers(ctx, &amp;auth.UserFilters{Limit: 1})
+        if err != nil </span><span class="cov0" title="0">{
+                h.writeError(w, http.StatusInternalServerError, "Failed to get user count", err.Error())
+                return
+        }</span>
+        <span class="cov0" title="0">_ = allUsers // We only need the count
+
+        activeUsers, _, err := h.userStore.ListUsers(ctx, &amp;auth.UserFilters{IsActive: boolPtr(true), Limit: 1})
+        if err != nil </span><span class="cov0" title="0">{
+                h.writeError(w, http.StatusInternalServerError, "Failed to get active user count", err.Error())
+                return
+        }</span>
+
+        <span class="cov0" title="0">adminUsers, _, err := h.userStore.ListUsers(ctx, &amp;auth.UserFilters{IsAdmin: boolPtr(true), Limit: 1})
+        if err != nil </span><span class="cov0" title="0">{
+                h.writeError(w, http.StatusInternalServerError, "Failed to get admin user count", err.Error())
+                return
+        }</span>
+
+        <span class="cov0" title="0">stats := AdminStats{
+                UserCount:      totalUsers,
+                ActiveUsers:    len(activeUsers),
+                AdminUsers:     len(adminUsers),
+                SystemUptime:   time.Since(time.Now().Add(-24 * time.Hour)), // Placeholder
+                DatabaseStatus: "healthy",
+                RedisStatus:    "healthy",
+        }
+
+        w.Header().Set("Content-Type", "application/json")
+        json.NewEncoder(w).Encode(stats)</span>
+}
+
+// HandleUsers returns a list of users with pagination
+func (h *AdminHandler) HandleUsers(w http.ResponseWriter, r *http.Request) <span class="cov0" title="0">{
+        switch r.Method </span>{
+        case http.MethodGet:<span class="cov0" title="0">
+                h.listUsers(w, r)</span>
+        case http.MethodPost:<span class="cov0" title="0">
+                h.createUser(w, r)</span>
+        default:<span class="cov0" title="0">
+                http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)</span>
+        }
+}
+
+// HandleUser handles operations on a specific user
+func (h *AdminHandler) HandleUser(w http.ResponseWriter, r *http.Request) <span class="cov0" title="0">{
+        // Extract user ID from path
+        path := r.URL.Path
+        if len(path) &lt; len("/api/admin/users/") </span><span class="cov0" title="0">{
+                http.Error(w, "Invalid user ID", http.StatusBadRequest)
+                return
+        }</span>
+
+        <span class="cov0" title="0">userIDStr := path[len("/api/admin/users/"):]
+        userID, err := strconv.Atoi(userIDStr)
+        if err != nil </span><span class="cov0" title="0">{
+                http.Error(w, "Invalid user ID", http.StatusBadRequest)
+                return
+        }</span>
+
+        <span class="cov0" title="0">switch r.Method </span>{
+        case http.MethodGet:<span class="cov0" title="0">
+                h.getUser(w, r, userID)</span>
+        case http.MethodPut:<span class="cov0" title="0">
+                h.updateUser(w, r, userID)</span>
+        case http.MethodDelete:<span class="cov0" title="0">
+                h.deleteUser(w, r, userID)</span>
+        default:<span class="cov0" title="0">
+                http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)</span>
+        }
+}
+
+// HandleSystem handles system operations
+func (h *AdminHandler) HandleSystem(w http.ResponseWriter, r *http.Request) <span class="cov0" title="0">{
+        if r.Method != http.MethodPost </span><span class="cov0" title="0">{
+                http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+                return
+        }</span>
+
+        <span class="cov0" title="0">action := r.URL.Query().Get("action")
+        switch action </span>{
+        case "clear_cache":<span class="cov0" title="0">
+                h.clearCache(w, r)</span>
+        case "backup_db":<span class="cov0" title="0">
+                h.backupDatabase(w, r)</span>
+        default:<span class="cov0" title="0">
+                http.Error(w, "Unknown action", http.StatusBadRequest)</span>
+        }
+}
+
+func (h *AdminHandler) listUsers(w http.ResponseWriter, r *http.Request) <span class="cov0" title="0">{
+        // Parse query parameters
+        search := r.URL.Query().Get("search")
+        limitStr := r.URL.Query().Get("limit")
+        offsetStr := r.URL.Query().Get("offset")
+
+        limit := 20
+        if limitStr != "" </span><span class="cov0" title="0">{
+                if l, err := strconv.Atoi(limitStr); err == nil &amp;&amp; l &gt; 0 &amp;&amp; l &lt;= 100 </span><span class="cov0" title="0">{
+                        limit = l
+                }</span>
+        }
+
+        <span class="cov0" title="0">offset := 0
+        if offsetStr != "" </span><span class="cov0" title="0">{
+                if o, err := strconv.Atoi(offsetStr); err == nil &amp;&amp; o &gt;= 0 </span><span class="cov0" title="0">{
+                        offset = o
+                }</span>
+        }
+
+        <span class="cov0" title="0">filters := &amp;auth.UserFilters{
+                Search: search,
+                Limit:  limit,
+                Offset: offset,
+        }
+
+        users, total, err := h.userStore.ListUsers(r.Context(), filters)
+        if err != nil </span><span class="cov0" title="0">{
+                h.writeError(w, http.StatusInternalServerError, "Failed to list users", err.Error())
+                return
+        }</span>
+
+        <span class="cov0" title="0">response := map[string]interface{}{
+                "users":  users,
+                "total":  total,
+                "limit":  limit,
+                "offset": offset,
+        }
+
+        w.Header().Set("Content-Type", "application/json")
+        json.NewEncoder(w).Encode(response)</span>
+}
+
+func (h *AdminHandler) getUser(w http.ResponseWriter, r *http.Request, userID int) <span class="cov0" title="0">{
+        user, err := h.userStore.GetUserByID(r.Context(), userID)
+        if err != nil </span><span class="cov0" title="0">{
+                h.writeError(w, http.StatusNotFound, "User not found", err.Error())
+                return
+        }</span>
+
+        // Remove sensitive data
+        <span class="cov0" title="0">user.PasswordHash = ""
+
+        w.Header().Set("Content-Type", "application/json")
+        json.NewEncoder(w).Encode(user)</span>
+}
+
+func (h *AdminHandler) updateUser(w http.ResponseWriter, r *http.Request, userID int) <span class="cov0" title="0">{
+        var updates auth.UpdateUserRequest
+        if err := json.NewDecoder(r.Body).Decode(&amp;updates); err != nil </span><span class="cov0" title="0">{
+                h.writeError(w, http.StatusBadRequest, "Invalid JSON", err.Error())
+                return
+        }</span>
+
+        <span class="cov0" title="0">user, err := h.userStore.UpdateUser(r.Context(), userID, &amp;updates)
+        if err != nil </span><span class="cov0" title="0">{
+                h.writeError(w, http.StatusInternalServerError, "Failed to update user", err.Error())
+                return
+        }</span>
+
+        // Remove sensitive data
+        <span class="cov0" title="0">user.PasswordHash = ""
+
+        w.Header().Set("Content-Type", "application/json")
+        json.NewEncoder(w).Encode(user)</span>
+}
+
+func (h *AdminHandler) deleteUser(w http.ResponseWriter, r *http.Request, userID int) <span class="cov0" title="0">{
+        if err := h.userStore.DeleteUser(r.Context(), userID); err != nil </span><span class="cov0" title="0">{
+                h.writeError(w, http.StatusInternalServerError, "Failed to delete user", err.Error())
+                return
+        }</span>
+
+        <span class="cov0" title="0">w.WriteHeader(http.StatusNoContent)</span>
+}
+
+func (h *AdminHandler) createUser(w http.ResponseWriter, r *http.Request) <span class="cov0" title="0">{
+        var req auth.CreateUserRequest
+        if err := json.NewDecoder(r.Body).Decode(&amp;req); err != nil </span><span class="cov0" title="0">{
+                h.writeError(w, http.StatusBadRequest, "Invalid JSON", err.Error())
+                return
+        }</span>
+
+        // Basic validation
+        <span class="cov0" title="0">if req.Username == "" || req.Email == "" || req.Password == "" </span><span class="cov0" title="0">{
+                h.writeError(w, http.StatusBadRequest, "Username, email, and password required", "")
+                return
+        }</span>
+
+        <span class="cov0" title="0">user, err := h.userStore.CreateUser(r.Context(), &amp;req)
+        if err != nil </span><span class="cov0" title="0">{
+                h.writeError(w, http.StatusInternalServerError, "Failed to create user", err.Error())
+                return
+        }</span>
+
+        // Remove sensitive data
+        <span class="cov0" title="0">user.PasswordHash = ""
+
+        w.Header().Set("Content-Type", "application/json")
+        w.WriteHeader(http.StatusCreated)
+        json.NewEncoder(w).Encode(user)</span>
+}
+
+func (h *AdminHandler) clearCache(w http.ResponseWriter, r *http.Request) <span class="cov0" title="0">{
+        // Implement cache clearing logic
+        w.Header().Set("Content-Type", "application/json")
+        json.NewEncoder(w).Encode(map[string]string{
+                "message": "Cache cleared successfully",
+        })
+}</span>
+
+func (h *AdminHandler) backupDatabase(w http.ResponseWriter, r *http.Request) <span class="cov0" title="0">{
+        // Implement database backup logic
+        w.Header().Set("Content-Type", "application/json")
+        json.NewEncoder(w).Encode(map[string]string{
+                "message": "Backup started",
+        })
+}</span>
+
+func (h *AdminHandler) writeError(w http.ResponseWriter, statusCode int, message, details string) <span class="cov0" title="0">{
+        w.Header().Set("Content-Type", "application/json")
+        w.WriteHeader(statusCode)
+
+        response := map[string]interface{}{
+                "error":   message,
+                "message": details,
+        }
+
+        json.NewEncoder(w).Encode(response)
+}</span>
+
+func boolPtr(b bool) *bool <span class="cov0" title="0">{
+        return &amp;b
+}</span>
+</pre>
+		
+		<pre class="file" id="file2" style="display: none">package auth
+
+import (
+        "context"
+        "crypto/sha256"
+        "encoding/hex"
+        "fmt"
+        "time"
+
+        "github.com/golang-jwt/jwt/v5"
+        "github.com/google/uuid"
+        "golang.org/x/crypto/bcrypt"
+)
+
+type Claims struct {
+        UserID   int    `json:"user_id"`
+        Username string `json:"username"`
+        Email    string `json:"email"`
+        IsAdmin  bool   `json:"is_admin"`
+        jwt.RegisteredClaims
+}
+
+type AuthService struct {
+        jwtSecret    []byte
+        tokenExpiry  time.Duration
+        sessionStore SessionStore
+}
+
+type SessionStore interface {
+        CreateSession(ctx context.Context, session *Session) error
+        GetSession(ctx context.Context, tokenHash string) (*Session, error)
+        DeleteSession(ctx context.Context, tokenHash string) error
+        DeleteUserSessions(ctx context.Context, userID int) error
+        CleanupExpiredSessions(ctx context.Context) error
+}
+
+type Session struct {
+        ID         string    `json:"id"`
+        UserID     int       `json:"user_id"`
+        TokenHash  string    `json:"token_hash"`
+        ExpiresAt  time.Time `json:"expires_at"`
+        CreatedAt  time.Time `json:"created_at"`
+        LastUsedAt time.Time `json:"last_used_at"`
+        IPAddress  string    `json:"ip_address,omitempty"`
+        UserAgent  string    `json:"user_agent,omitempty"`
+}
+
+type User struct {
+        ID            int        `json:"id"`
+        Username      string     `json:"username"`
+        Email         string     `json:"email"`
+        PasswordHash  string     `json:"-"`
+        IsAdmin       bool       `json:"is_admin"`
+        IsActive      bool       `json:"is_active"`
+        EmailVerified bool       `json:"email_verified"`
+        CreatedAt     time.Time  `json:"created_at"`
+        LastLogin     *time.Time `json:"last_login,omitempty"`
+}
+
+// NewAuthService creates a new authentication service
+func NewAuthService(jwtSecret string, tokenExpiry time.Duration, sessionStore SessionStore) *AuthService <span class="cov0" title="0">{
+        return &amp;AuthService{
+                jwtSecret:    []byte(jwtSecret),
+                tokenExpiry:  tokenExpiry,
+                sessionStore: sessionStore,
+        }
+}</span>
+
+// HashPassword creates a bcrypt hash of the password
+func (a *AuthService) HashPassword(password string) (string, error) <span class="cov0" title="0">{
+        hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+        if err != nil </span><span class="cov0" title="0">{
+                return "", fmt.Errorf("failed to hash password: %w", err)
+        }</span>
+        <span class="cov0" title="0">return string(hash), nil</span>
+}
+
+// VerifyPassword checks if the password matches the hash
+func (a *AuthService) VerifyPassword(password, hash string) bool <span class="cov0" title="0">{
+        err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
+        return err == nil
+}</span>
+
+// GenerateToken creates a new JWT token and session
+func (a *AuthService) GenerateToken(ctx context.Context, user *User, ipAddress, userAgent string) (string, error) <span class="cov0" title="0">{
+        now := time.Now()
+        expiresAt := now.Add(a.tokenExpiry)
+
+        claims := &amp;Claims{
+                UserID:   user.ID,
+                Username: user.Username,
+                Email:    user.Email,
+                IsAdmin:  user.IsAdmin,
+                RegisteredClaims: jwt.RegisteredClaims{
+                        ExpiresAt: jwt.NewNumericDate(expiresAt),
+                        IssuedAt:  jwt.NewNumericDate(now),
+                        NotBefore: jwt.NewNumericDate(now),
+                        Issuer:    "asdf-webfinger",
+                        Subject:   fmt.Sprintf("user:%d", user.ID),
+                        ID:        uuid.New().String(),
+                },
+        }
+
+        token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+        tokenString, err := token.SignedString(a.jwtSecret)
+        if err != nil </span><span class="cov0" title="0">{
+                return "", fmt.Errorf("failed to sign token: %w", err)
+        }</span>
+
+        // Create session record
+        <span class="cov0" title="0">tokenHash := a.hashToken(tokenString)
+        session := &amp;Session{
+                ID:         claims.RegisteredClaims.ID,
+                UserID:     user.ID,
+                TokenHash:  tokenHash,
+                ExpiresAt:  expiresAt,
+                CreatedAt:  now,
+                LastUsedAt: now,
+                IPAddress:  ipAddress,
+                UserAgent:  userAgent,
+        }
+
+        if err := a.sessionStore.CreateSession(ctx, session); err != nil </span><span class="cov0" title="0">{
+                return "", fmt.Errorf("failed to create session: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">return tokenString, nil</span>
+}
+
+// ValidateToken validates a JWT token and checks if session exists
+func (a *AuthService) ValidateToken(ctx context.Context, tokenString string) (*Claims, error) <span class="cov0" title="0">{
+        token, err := jwt.ParseWithClaims(tokenString, &amp;Claims{}, func(token *jwt.Token) (interface{}, error) </span><span class="cov0" title="0">{
+                if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok </span><span class="cov0" title="0">{
+                        return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+                }</span>
+                <span class="cov0" title="0">return a.jwtSecret, nil</span>
+        })
+
+        <span class="cov0" title="0">if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to parse token: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">claims, ok := token.Claims.(*Claims)
+        if !ok || !token.Valid </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("invalid token claims")
+        }</span>
+
+        // Check if session exists and is valid
+        <span class="cov0" title="0">tokenHash := a.hashToken(tokenString)
+        session, err := a.sessionStore.GetSession(ctx, tokenHash)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("session not found: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">if session.ExpiresAt.Before(time.Now()) </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("session expired")
+        }</span>
+
+        <span class="cov0" title="0">return claims, nil</span>
+}
+
+// RevokeToken revokes a token by deleting its session
+func (a *AuthService) RevokeToken(ctx context.Context, tokenString string) error <span class="cov0" title="0">{
+        tokenHash := a.hashToken(tokenString)
+        return a.sessionStore.DeleteSession(ctx, tokenHash)
+}</span>
+
+// RevokeAllUserTokens revokes all tokens for a user
+func (a *AuthService) RevokeAllUserTokens(ctx context.Context, userID int) error <span class="cov0" title="0">{
+        return a.sessionStore.DeleteUserSessions(ctx, userID)
+}</span>
+
+// CleanupExpiredSessions removes expired sessions
+func (a *AuthService) CleanupExpiredSessions(ctx context.Context) error <span class="cov0" title="0">{
+        return a.sessionStore.CleanupExpiredSessions(ctx)
+}</span>
+
+// hashToken creates a SHA-256 hash of the token for storage
+func (a *AuthService) hashToken(token string) string <span class="cov0" title="0">{
+        hash := sha256.Sum256([]byte(token))
+        return hex.EncodeToString(hash[:])
+}</span>
+
+// RefreshToken creates a new token for an existing valid session
+func (a *AuthService) RefreshToken(ctx context.Context, oldToken string, ipAddress, userAgent string) (string, error) <span class="cov0" title="0">{
+        // Validate the old token first
+        claims, err := a.ValidateToken(ctx, oldToken)
+        if err != nil </span><span class="cov0" title="0">{
+                return "", fmt.Errorf("invalid token for refresh: %w", err)
+        }</span>
+
+        // Create a new user object from claims
+        <span class="cov0" title="0">user := &amp;User{
+                ID:       claims.UserID,
+                Username: claims.Username,
+                Email:    claims.Email,
+                IsAdmin:  claims.IsAdmin,
+        }
+
+        // Revoke the old token
+        if err := a.RevokeToken(ctx, oldToken); err != nil </span>{<span class="cov0" title="0">
+                // Log error but don't fail the refresh
+                // The old token will expire naturally
+        }</span>
+
+        // Generate a new token
+        <span class="cov0" title="0">return a.GenerateToken(ctx, user, ipAddress, userAgent)</span>
+}
+</pre>
+		
+		<pre class="file" id="file3" style="display: none">package auth
+
+import (
+        "context"
+        "database/sql"
+        "fmt"
+
+        "github.com/jackc/pgx/v5/pgxpool"
+)
+
+type PostgresSessionStore struct {
+        db *pgxpool.Pool
+}
+
+// NewPostgresSessionStore creates a new PostgreSQL session store
+func NewPostgresSessionStore(db *pgxpool.Pool) *PostgresSessionStore <span class="cov0" title="0">{
+        return &amp;PostgresSessionStore{db: db}
+}</span>
+
+// CreateSession stores a new session in the database
+func (s *PostgresSessionStore) CreateSession(ctx context.Context, session *Session) error <span class="cov0" title="0">{
+        query := `
+                INSERT INTO sessions (id, user_id, token_hash, expires_at, created_at, last_used_at, ip_address, user_agent)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`
+
+        _, err := s.db.Exec(ctx, query,
+                session.ID,
+                session.UserID,
+                session.TokenHash,
+                session.ExpiresAt,
+                session.CreatedAt,
+                session.LastUsedAt,
+                session.IPAddress,
+                session.UserAgent,
+        )
+
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to create session: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">return nil</span>
+}
+
+// GetSession retrieves a session by token hash
+func (s *PostgresSessionStore) GetSession(ctx context.Context, tokenHash string) (*Session, error) <span class="cov0" title="0">{
+        query := `
+                SELECT id, user_id, token_hash, expires_at, created_at, last_used_at, 
+                       COALESCE(ip_address::text, '') as ip_address, 
+                       COALESCE(user_agent, '') as user_agent
+                FROM sessions 
+                WHERE token_hash = $1 AND expires_at &gt; NOW()`
+
+        var session Session
+        err := s.db.QueryRow(ctx, query, tokenHash).Scan(
+                &amp;session.ID,
+                &amp;session.UserID,
+                &amp;session.TokenHash,
+                &amp;session.ExpiresAt,
+                &amp;session.CreatedAt,
+                &amp;session.LastUsedAt,
+                &amp;session.IPAddress,
+                &amp;session.UserAgent,
+        )
+
+        if err != nil </span><span class="cov0" title="0">{
+                if err == sql.ErrNoRows </span><span class="cov0" title="0">{
+                        return nil, fmt.Errorf("session not found")
+                }</span>
+                <span class="cov0" title="0">return nil, fmt.Errorf("failed to get session: %w", err)</span>
+        }
+
+        // Update last used time
+        <span class="cov0" title="0">updateQuery := `UPDATE sessions SET last_used_at = NOW() WHERE token_hash = $1`
+        _, _ = s.db.Exec(ctx, updateQuery, tokenHash)
+
+        return &amp;session, nil</span>
+}
+
+// DeleteSession removes a session by token hash
+func (s *PostgresSessionStore) DeleteSession(ctx context.Context, tokenHash string) error <span class="cov0" title="0">{
+        query := `DELETE FROM sessions WHERE token_hash = $1`
+
+        result, err := s.db.Exec(ctx, query, tokenHash)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to delete session: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">if result.RowsAffected() == 0 </span><span class="cov0" title="0">{
+                return fmt.Errorf("session not found")
+        }</span>
+
+        <span class="cov0" title="0">return nil</span>
+}
+
+// DeleteUserSessions removes all sessions for a user
+func (s *PostgresSessionStore) DeleteUserSessions(ctx context.Context, userID int) error <span class="cov0" title="0">{
+        query := `DELETE FROM sessions WHERE user_id = $1`
+
+        _, err := s.db.Exec(ctx, query, userID)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to delete user sessions: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">return nil</span>
+}
+
+// CleanupExpiredSessions removes all expired sessions
+func (s *PostgresSessionStore) CleanupExpiredSessions(ctx context.Context) error <span class="cov0" title="0">{
+        query := `DELETE FROM sessions WHERE expires_at &lt;= NOW()`
+
+        result, err := s.db.Exec(ctx, query)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to cleanup expired sessions: %w", err)
+        }</span>
+
+        // Log the number of cleaned up sessions (you might want to use structured logging here)
+        <span class="cov0" title="0">_ = result.RowsAffected()
+
+        return nil</span>
+}
+
+// GetUserSessions returns all active sessions for a user
+func (s *PostgresSessionStore) GetUserSessions(ctx context.Context, userID int) ([]*Session, error) <span class="cov0" title="0">{
+        query := `
+                SELECT id, user_id, token_hash, expires_at, created_at, last_used_at,
+                       COALESCE(ip_address::text, '') as ip_address,
+                       COALESCE(user_agent, '') as user_agent
+                FROM sessions 
+                WHERE user_id = $1 AND expires_at &gt; NOW()
+                ORDER BY last_used_at DESC`
+
+        rows, err := s.db.Query(ctx, query, userID)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to get user sessions: %w", err)
+        }</span>
+        <span class="cov0" title="0">defer rows.Close()
+
+        var sessions []*Session
+        for rows.Next() </span><span class="cov0" title="0">{
+                var session Session
+                err := rows.Scan(
+                        &amp;session.ID,
+                        &amp;session.UserID,
+                        &amp;session.TokenHash,
+                        &amp;session.ExpiresAt,
+                        &amp;session.CreatedAt,
+                        &amp;session.LastUsedAt,
+                        &amp;session.IPAddress,
+                        &amp;session.UserAgent,
+                )
+                if err != nil </span><span class="cov0" title="0">{
+                        return nil, fmt.Errorf("failed to scan session: %w", err)
+                }</span>
+                <span class="cov0" title="0">sessions = append(sessions, &amp;session)</span>
+        }
+
+        <span class="cov0" title="0">return sessions, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file4" style="display: none">package auth
+
+import (
+        "context"
+        "database/sql"
+        "fmt"
+        "strings"
+
+        "github.com/jackc/pgx/v5/pgxpool"
+)
+
+type UserStore interface {
+        CreateUser(ctx context.Context, user *CreateUserRequest) (*User, error)
+        GetUserByID(ctx context.Context, id int) (*User, error)
+        GetUserByUsername(ctx context.Context, username string) (*User, error)
+        GetUserByEmail(ctx context.Context, email string) (*User, error)
+        UpdateUser(ctx context.Context, id int, updates *UpdateUserRequest) (*User, error)
+        DeleteUser(ctx context.Context, id int) error
+        ListUsers(ctx context.Context, filters *UserFilters) ([]*User, int, error)
+        UpdateLastLogin(ctx context.Context, id int) error
+        VerifyEmail(ctx context.Context, email string) error
+}
+
+type CreateUserRequest struct {
+        Username    string `json:"username" validate:"required,min=3,max=50,alphanum"`
+        Email       string `json:"email" validate:"required,email"`
+        Password    string `json:"password" validate:"required,min=8"`
+        DisplayName string `json:"display_name,omitempty" validate:"max=100"`
+        Bio         string `json:"bio,omitempty" validate:"max=500"`
+        Website     string `json:"website,omitempty" validate:"url"`
+        Location    string `json:"location,omitempty" validate:"max=100"`
+        Domain      string `json:"domain,omitempty"`
+}
+
+type UpdateUserRequest struct {
+        DisplayName   *string `json:"display_name,omitempty"`
+        Bio           *string `json:"bio,omitempty"`
+        Website       *string `json:"website,omitempty"`
+        Location      *string `json:"location,omitempty"`
+        AvatarURL     *string `json:"avatar_url,omitempty"`
+        IsActive      *bool   `json:"is_active,omitempty"`
+        IsAdmin       *bool   `json:"is_admin,omitempty"`
+        EmailVerified *bool   `json:"email_verified,omitempty"`
+}
+
+type UserFilters struct {
+        Search   string `json:"search,omitempty"`
+        IsActive *bool  `json:"is_active,omitempty"`
+        IsAdmin  *bool  `json:"is_admin,omitempty"`
+        Domain   string `json:"domain,omitempty"`
+        Limit    int    `json:"limit,omitempty"`
+        Offset   int    `json:"offset,omitempty"`
+}
+
+type PostgresUserStore struct {
+        db *pgxpool.Pool
+}
+
+// NewPostgresUserStore creates a new PostgreSQL user store
+func NewPostgresUserStore(db *pgxpool.Pool) *PostgresUserStore <span class="cov0" title="0">{
+        return &amp;PostgresUserStore{db: db}
+}</span>
+
+// CreateUser creates a new user
+func (s *PostgresUserStore) CreateUser(ctx context.Context, req *CreateUserRequest) (*User, error) <span class="cov0" title="0">{
+        // Default domain if not provided
+        domain := req.Domain
+        if domain == "" </span><span class="cov0" title="0">{
+                parts := strings.Split(req.Email, "@")
+                if len(parts) == 2 </span><span class="cov0" title="0">{
+                        domain = parts[1]
+                }</span>
+        }
+
+        <span class="cov0" title="0">subject := fmt.Sprintf("acct:%s@%s", req.Username, domain)
+
+        query := `
+                INSERT INTO users (username, domain, subject, email, password_hash, display_name, bio, website, location, created_at, updated_at)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
+                RETURNING id, username, domain, subject, email, display_name, bio, website, location, 
+                          avatar_url, is_admin, is_active, email_verified, created_at, updated_at, last_login`
+
+        var user User
+        var displayName, bio, website, location, avatarURL sql.NullString
+        var lastLogin sql.NullTime
+
+        err := s.db.QueryRow(ctx, query,
+                req.Username,
+                domain,
+                subject,
+                req.Email,
+                "", // Password hash will be set separately
+                req.DisplayName,
+                req.Bio,
+                req.Website,
+                req.Location,
+        ).Scan(
+                &amp;user.ID,
+                &amp;user.Username,
+                &amp;user.Email,
+                &amp;displayName,
+                &amp;bio,
+                &amp;website,
+                &amp;location,
+                &amp;avatarURL,
+                &amp;user.IsAdmin,
+                &amp;user.IsActive,
+                &amp;user.EmailVerified,
+                &amp;user.CreatedAt,
+                &amp;lastLogin,
+        )
+
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to create user: %w", err)
+        }</span>
+
+        // Handle nullable fields
+        <span class="cov0" title="0">if displayName.Valid </span>{<span class="cov0" title="0">
+                // Add DisplayName to User struct if needed
+        }</span>
+        <span class="cov0" title="0">if lastLogin.Valid </span><span class="cov0" title="0">{
+                user.LastLogin = &amp;lastLogin.Time
+        }</span>
+
+        <span class="cov0" title="0">return &amp;user, nil</span>
+}
+
+// GetUserByID retrieves a user by ID
+func (s *PostgresUserStore) GetUserByID(ctx context.Context, id int) (*User, error) <span class="cov0" title="0">{
+        query := `
+                SELECT id, username, email, password_hash, is_admin, is_active, email_verified, created_at, last_login
+                FROM users 
+                WHERE id = $1`
+
+        var user User
+        var lastLogin sql.NullTime
+
+        err := s.db.QueryRow(ctx, query, id).Scan(
+                &amp;user.ID,
+                &amp;user.Username,
+                &amp;user.Email,
+                &amp;user.PasswordHash,
+                &amp;user.IsAdmin,
+                &amp;user.IsActive,
+                &amp;user.EmailVerified,
+                &amp;user.CreatedAt,
+                &amp;lastLogin,
+        )
+
+        if err != nil </span><span class="cov0" title="0">{
+                if err == sql.ErrNoRows </span><span class="cov0" title="0">{
+                        return nil, fmt.Errorf("user not found")
+                }</span>
+                <span class="cov0" title="0">return nil, fmt.Errorf("failed to get user: %w", err)</span>
+        }
+
+        <span class="cov0" title="0">if lastLogin.Valid </span><span class="cov0" title="0">{
+                user.LastLogin = &amp;lastLogin.Time
+        }</span>
+
+        <span class="cov0" title="0">return &amp;user, nil</span>
+}
+
+// GetUserByUsername retrieves a user by username
+func (s *PostgresUserStore) GetUserByUsername(ctx context.Context, username string) (*User, error) <span class="cov0" title="0">{
+        query := `
+                SELECT id, username, email, password_hash, is_admin, is_active, email_verified, created_at, last_login
+                FROM users 
+                WHERE username = $1`
+
+        var user User
+        var lastLogin sql.NullTime
+
+        err := s.db.QueryRow(ctx, query, username).Scan(
+                &amp;user.ID,
+                &amp;user.Username,
+                &amp;user.Email,
+                &amp;user.PasswordHash,
+                &amp;user.IsAdmin,
+                &amp;user.IsActive,
+                &amp;user.EmailVerified,
+                &amp;user.CreatedAt,
+                &amp;lastLogin,
+        )
+
+        if err != nil </span><span class="cov0" title="0">{
+                if err == sql.ErrNoRows </span><span class="cov0" title="0">{
+                        return nil, fmt.Errorf("user not found")
+                }</span>
+                <span class="cov0" title="0">return nil, fmt.Errorf("failed to get user: %w", err)</span>
+        }
+
+        <span class="cov0" title="0">if lastLogin.Valid </span><span class="cov0" title="0">{
+                user.LastLogin = &amp;lastLogin.Time
+        }</span>
+
+        <span class="cov0" title="0">return &amp;user, nil</span>
+}
+
+// GetUserByEmail retrieves a user by email
+func (s *PostgresUserStore) GetUserByEmail(ctx context.Context, email string) (*User, error) <span class="cov0" title="0">{
+        query := `
+                SELECT id, username, email, password_hash, is_admin, is_active, email_verified, created_at, last_login
+                FROM users 
+                WHERE email = $1`
+
+        var user User
+        var lastLogin sql.NullTime
+
+        err := s.db.QueryRow(ctx, query, email).Scan(
+                &amp;user.ID,
+                &amp;user.Username,
+                &amp;user.Email,
+                &amp;user.PasswordHash,
+                &amp;user.IsAdmin,
+                &amp;user.IsActive,
+                &amp;user.EmailVerified,
+                &amp;user.CreatedAt,
+                &amp;lastLogin,
+        )
+
+        if err != nil </span><span class="cov0" title="0">{
+                if err == sql.ErrNoRows </span><span class="cov0" title="0">{
+                        return nil, fmt.Errorf("user not found")
+                }</span>
+                <span class="cov0" title="0">return nil, fmt.Errorf("failed to get user: %w", err)</span>
+        }
+
+        <span class="cov0" title="0">if lastLogin.Valid </span><span class="cov0" title="0">{
+                user.LastLogin = &amp;lastLogin.Time
+        }</span>
+
+        <span class="cov0" title="0">return &amp;user, nil</span>
+}
+
+// UpdateUser updates a user's information
+func (s *PostgresUserStore) UpdateUser(ctx context.Context, id int, req *UpdateUserRequest) (*User, error) <span class="cov0" title="0">{
+        // Build dynamic query based on provided fields
+        setParts := []string{"updated_at = NOW()"}
+        args := []interface{}{id}
+        argIndex := 2
+
+        if req.DisplayName != nil </span><span class="cov0" title="0">{
+                setParts = append(setParts, fmt.Sprintf("display_name = $%d", argIndex))
+                args = append(args, *req.DisplayName)
+                argIndex++
+        }</span>
+
+        <span class="cov0" title="0">if req.Bio != nil </span><span class="cov0" title="0">{
+                setParts = append(setParts, fmt.Sprintf("bio = $%d", argIndex))
+                args = append(args, *req.Bio)
+                argIndex++
+        }</span>
+
+        <span class="cov0" title="0">if req.Website != nil </span><span class="cov0" title="0">{
+                setParts = append(setParts, fmt.Sprintf("website = $%d", argIndex))
+                args = append(args, *req.Website)
+                argIndex++
+        }</span>
+
+        <span class="cov0" title="0">if req.Location != nil </span><span class="cov0" title="0">{
+                setParts = append(setParts, fmt.Sprintf("location = $%d", argIndex))
+                args = append(args, *req.Location)
+                argIndex++
+        }</span>
+
+        <span class="cov0" title="0">if req.AvatarURL != nil </span><span class="cov0" title="0">{
+                setParts = append(setParts, fmt.Sprintf("avatar_url = $%d", argIndex))
+                args = append(args, *req.AvatarURL)
+                argIndex++
+        }</span>
+
+        <span class="cov0" title="0">if req.IsActive != nil </span><span class="cov0" title="0">{
+                setParts = append(setParts, fmt.Sprintf("is_active = $%d", argIndex))
+                args = append(args, *req.IsActive)
+                argIndex++
+        }</span>
+
+        <span class="cov0" title="0">if req.IsAdmin != nil </span><span class="cov0" title="0">{
+                setParts = append(setParts, fmt.Sprintf("is_admin = $%d", argIndex))
+                args = append(args, *req.IsAdmin)
+                argIndex++
+        }</span>
+
+        <span class="cov0" title="0">if req.EmailVerified != nil </span><span class="cov0" title="0">{
+                setParts = append(setParts, fmt.Sprintf("email_verified = $%d", argIndex))
+                args = append(args, *req.EmailVerified)
+                argIndex++
+        }</span>
+
+        <span class="cov0" title="0">query := fmt.Sprintf(`
+                UPDATE users 
+                SET %s
+                WHERE id = $1
+                RETURNING id, username, email, is_admin, is_active, email_verified, created_at, updated_at, last_login`,
+                strings.Join(setParts, ", "))
+
+        var user User
+        var lastLogin sql.NullTime
+
+        err := s.db.QueryRow(ctx, query, args...).Scan(
+                &amp;user.ID,
+                &amp;user.Username,
+                &amp;user.Email,
+                &amp;user.IsAdmin,
+                &amp;user.IsActive,
+                &amp;user.EmailVerified,
+                &amp;user.CreatedAt,
+                &amp;lastLogin,
+        )
+
+        if err != nil </span><span class="cov0" title="0">{
+                if err == sql.ErrNoRows </span><span class="cov0" title="0">{
+                        return nil, fmt.Errorf("user not found")
+                }</span>
+                <span class="cov0" title="0">return nil, fmt.Errorf("failed to update user: %w", err)</span>
+        }
+
+        <span class="cov0" title="0">if lastLogin.Valid </span><span class="cov0" title="0">{
+                user.LastLogin = &amp;lastLogin.Time
+        }</span>
+
+        <span class="cov0" title="0">return &amp;user, nil</span>
+}
+
+// DeleteUser soft deletes a user (sets is_active to false)
+func (s *PostgresUserStore) DeleteUser(ctx context.Context, id int) error <span class="cov0" title="0">{
+        query := `UPDATE users SET is_active = false, updated_at = NOW() WHERE id = $1`
+
+        result, err := s.db.Exec(ctx, query, id)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to delete user: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">if result.RowsAffected() == 0 </span><span class="cov0" title="0">{
+                return fmt.Errorf("user not found")
+        }</span>
+
+        <span class="cov0" title="0">return nil</span>
+}
+
+// ListUsers returns a paginated list of users with optional filtering
+func (s *PostgresUserStore) ListUsers(ctx context.Context, filters *UserFilters) ([]*User, int, error) <span class="cov0" title="0">{
+        // Build WHERE clauses
+        whereParts := []string{"1=1"}
+        args := []interface{}{}
+        argIndex := 1
+
+        if filters.Search != "" </span><span class="cov0" title="0">{
+                whereParts = append(whereParts, fmt.Sprintf("(username ILIKE $%d OR email ILIKE $%d OR display_name ILIKE $%d)", argIndex, argIndex, argIndex))
+                args = append(args, "%"+filters.Search+"%")
+                argIndex++
+        }</span>
+
+        <span class="cov0" title="0">if filters.IsActive != nil </span><span class="cov0" title="0">{
+                whereParts = append(whereParts, fmt.Sprintf("is_active = $%d", argIndex))
+                args = append(args, *filters.IsActive)
+                argIndex++
+        }</span>
+
+        <span class="cov0" title="0">if filters.IsAdmin != nil </span><span class="cov0" title="0">{
+                whereParts = append(whereParts, fmt.Sprintf("is_admin = $%d", argIndex))
+                args = append(args, *filters.IsAdmin)
+                argIndex++
+        }</span>
+
+        <span class="cov0" title="0">if filters.Domain != "" </span><span class="cov0" title="0">{
+                whereParts = append(whereParts, fmt.Sprintf("domain = $%d", argIndex))
+                args = append(args, filters.Domain)
+                argIndex++
+        }</span>
+
+        <span class="cov0" title="0">whereClause := strings.Join(whereParts, " AND ")
+
+        // Count query
+        countQuery := fmt.Sprintf("SELECT COUNT(*) FROM users WHERE %s", whereClause)
+        var total int
+        err := s.db.QueryRow(ctx, countQuery, args...).Scan(&amp;total)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, 0, fmt.Errorf("failed to count users: %w", err)
+        }</span>
+
+        // Main query with pagination
+        <span class="cov0" title="0">limit := filters.Limit
+        if limit &lt;= 0 || limit &gt; 100 </span><span class="cov0" title="0">{
+                limit = 20
+        }</span>
+
+        <span class="cov0" title="0">offset := filters.Offset
+        if offset &lt; 0 </span><span class="cov0" title="0">{
+                offset = 0
+        }</span>
+
+        <span class="cov0" title="0">query := fmt.Sprintf(`
+                SELECT id, username, email, is_admin, is_active, email_verified, created_at, updated_at, last_login
+                FROM users 
+                WHERE %s 
+                ORDER BY created_at DESC 
+                LIMIT $%d OFFSET $%d`,
+                whereClause, argIndex, argIndex+1)
+
+        args = append(args, limit, offset)
+
+        rows, err := s.db.Query(ctx, query, args...)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, 0, fmt.Errorf("failed to list users: %w", err)
+        }</span>
+        <span class="cov0" title="0">defer rows.Close()
+
+        var users []*User
+        for rows.Next() </span><span class="cov0" title="0">{
+                var user User
+                var lastLogin sql.NullTime
+
+                err := rows.Scan(
+                        &amp;user.ID,
+                        &amp;user.Username,
+                        &amp;user.Email,
+                        &amp;user.IsAdmin,
+                        &amp;user.IsActive,
+                        &amp;user.EmailVerified,
+                        &amp;user.CreatedAt,
+                        &amp;lastLogin,
+                )
+                if err != nil </span><span class="cov0" title="0">{
+                        return nil, 0, fmt.Errorf("failed to scan user: %w", err)
+                }</span>
+
+                <span class="cov0" title="0">if lastLogin.Valid </span><span class="cov0" title="0">{
+                        user.LastLogin = &amp;lastLogin.Time
+                }</span>
+
+                <span class="cov0" title="0">users = append(users, &amp;user)</span>
+        }
+
+        <span class="cov0" title="0">return users, total, nil</span>
+}
+
+// UpdateLastLogin updates the user's last login time
+func (s *PostgresUserStore) UpdateLastLogin(ctx context.Context, id int) error <span class="cov0" title="0">{
+        query := `UPDATE users SET last_login = NOW() WHERE id = $1`
+        _, err := s.db.Exec(ctx, query, id)
+        return err
+}</span>
+
+// VerifyEmail marks a user's email as verified
+func (s *PostgresUserStore) VerifyEmail(ctx context.Context, email string) error <span class="cov0" title="0">{
+        query := `UPDATE users SET email_verified = true, updated_at = NOW() WHERE email = $1`
+        result, err := s.db.Exec(ctx, query, email)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to verify email: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">if result.RowsAffected() == 0 </span><span class="cov0" title="0">{
+                return fmt.Errorf("user not found")
+        }</span>
+
+        <span class="cov0" title="0">return nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file5" style="display: none">package cache
+
+import (
+        "asdf/internal/types"
+        "context"
+        "encoding/json"
+        "fmt"
+        "time"
+
+        "github.com/redis/go-redis/v9"
+)
+
+type Cache interface {
+        GetWebFingerRecord(ctx context.Context, subject string) (*types.JRD, error)
+        SetWebFingerRecord(ctx context.Context, subject string, jrd *types.JRD, expiry time.Duration) error
+        DeleteWebFingerRecord(ctx context.Context, subject string) error
+        GetSearchResults(ctx context.Context, query string) ([]string, error)
+        SetSearchResults(ctx context.Context, query string, results []string, expiry time.Duration) error
+        InvalidateUserCache(ctx context.Context, subject string) error
+        GetStats(ctx context.Context) (*CacheStats, error)
+        Close() error
+}
+
+type RedisCache struct {
+        client *redis.Client
+        prefix string
+}
+
+type CacheStats struct {
+        HitCount    int64 `json:"hit_count"`
+        MissCount   int64 `json:"miss_count"`
+        KeyCount    int64 `json:"key_count"`
+        MemoryUsage int64 `json:"memory_usage"`
+}
+
+// NewRedisCache creates a new Redis cache instance
+func NewRedisCache(redisURL, password string, db int) (*RedisCache, error) <span class="cov0" title="0">{
+        opt, err := redis.ParseURL(redisURL)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to parse Redis URL: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">if password != "" </span><span class="cov0" title="0">{
+                opt.Password = password
+        }</span>
+        <span class="cov0" title="0">if db != 0 </span><span class="cov0" title="0">{
+                opt.DB = db
+        }</span>
+
+        <span class="cov0" title="0">client := redis.NewClient(opt)
+
+        // Test connection
+        ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+        defer cancel()
+
+        if err := client.Ping(ctx).Err(); err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to connect to Redis: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">return &amp;RedisCache{
+                client: client,
+                prefix: "asdf:webfinger:",
+        }, nil</span>
+}
+
+// GetWebFingerRecord retrieves a WebFinger record from cache
+func (c *RedisCache) GetWebFingerRecord(ctx context.Context, subject string) (*types.JRD, error) <span class="cov0" title="0">{
+        key := c.webfingerKey(subject)
+
+        data, err := c.client.Get(ctx, key).Result()
+        if err != nil </span><span class="cov0" title="0">{
+                if err == redis.Nil </span><span class="cov0" title="0">{
+                        return nil, nil // Cache miss
+                }</span>
+                <span class="cov0" title="0">return nil, fmt.Errorf("failed to get WebFinger record from cache: %w", err)</span>
+        }
+
+        <span class="cov0" title="0">var jrd types.JRD
+        if err := json.Unmarshal([]byte(data), &amp;jrd); err != nil </span><span class="cov0" title="0">{
+                // If we can't unmarshal, delete the corrupted cache entry
+                c.client.Del(ctx, key)
+                return nil, fmt.Errorf("failed to unmarshal cached WebFinger record: %w", err)
+        }</span>
+
+        // Increment hit counter
+        <span class="cov0" title="0">c.client.Incr(ctx, c.prefix+"stats:hits")
+
+        return &amp;jrd, nil</span>
+}
+
+// SetWebFingerRecord stores a WebFinger record in cache
+func (c *RedisCache) SetWebFingerRecord(ctx context.Context, subject string, jrd *types.JRD, expiry time.Duration) error <span class="cov0" title="0">{
+        key := c.webfingerKey(subject)
+
+        data, err := json.Marshal(jrd)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to marshal WebFinger record: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">if err := c.client.Set(ctx, key, data, expiry).Err(); err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to set WebFinger record in cache: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">return nil</span>
+}
+
+// DeleteWebFingerRecord removes a WebFinger record from cache
+func (c *RedisCache) DeleteWebFingerRecord(ctx context.Context, subject string) error <span class="cov0" title="0">{
+        key := c.webfingerKey(subject)
+
+        if err := c.client.Del(ctx, key).Err(); err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to delete WebFinger record from cache: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">return nil</span>
+}
+
+// GetSearchResults retrieves search results from cache
+func (c *RedisCache) GetSearchResults(ctx context.Context, query string) ([]string, error) <span class="cov0" title="0">{
+        key := c.searchKey(query)
+
+        results, err := c.client.LRange(ctx, key, 0, -1).Result()
+        if err != nil </span><span class="cov0" title="0">{
+                if err == redis.Nil </span><span class="cov0" title="0">{
+                        return nil, nil // Cache miss
+                }</span>
+                <span class="cov0" title="0">return nil, fmt.Errorf("failed to get search results from cache: %w", err)</span>
+        }
+
+        <span class="cov0" title="0">if len(results) == 0 </span><span class="cov0" title="0">{
+                return nil, nil // Empty cache entry
+        }</span>
+
+        // Increment hit counter
+        <span class="cov0" title="0">c.client.Incr(ctx, c.prefix+"stats:hits")
+
+        return results, nil</span>
+}
+
+// SetSearchResults stores search results in cache
+func (c *RedisCache) SetSearchResults(ctx context.Context, query string, results []string, expiry time.Duration) error <span class="cov0" title="0">{
+        key := c.searchKey(query)
+
+        // Use pipeline for atomic operation
+        pipe := c.client.Pipeline()
+        pipe.Del(ctx, key) // Clear existing list
+
+        if len(results) &gt; 0 </span><span class="cov0" title="0">{
+                // Convert to interface{} slice for Redis
+                args := make([]interface{}, len(results))
+                for i, result := range results </span><span class="cov0" title="0">{
+                        args[i] = result
+                }</span>
+                <span class="cov0" title="0">pipe.LPush(ctx, key, args...)</span>
+        } else<span class="cov0" title="0"> {
+                // Store empty marker to avoid repeated database queries
+                pipe.LPush(ctx, key, "__EMPTY__")
+        }</span>
+
+        <span class="cov0" title="0">pipe.Expire(ctx, key, expiry)
+
+        _, err := pipe.Exec(ctx)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to set search results in cache: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">return nil</span>
+}
+
+// InvalidateUserCache removes all cache entries for a user
+func (c *RedisCache) InvalidateUserCache(ctx context.Context, subject string) error <span class="cov0" title="0">{
+        // Delete WebFinger record
+        if err := c.DeleteWebFingerRecord(ctx, subject); err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        // Delete search results that might contain this user
+        // Note: This is a simple approach. In production, you might want
+        // to use Redis SCAN to find and delete matching search cache keys
+        <span class="cov0" title="0">searchPattern := c.prefix + "search:*"
+        keys, err := c.client.Keys(ctx, searchPattern).Result()
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to find search cache keys: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">if len(keys) &gt; 0 </span><span class="cov0" title="0">{
+                if err := c.client.Del(ctx, keys...).Err(); err != nil </span><span class="cov0" title="0">{
+                        return fmt.Errorf("failed to delete search cache entries: %w", err)
+                }</span>
+        }
+
+        <span class="cov0" title="0">return nil</span>
+}
+
+// GetStats returns cache statistics
+func (c *RedisCache) GetStats(ctx context.Context) (*CacheStats, error) <span class="cov0" title="0">{
+        pipe := c.client.Pipeline()
+
+        hitCmd := pipe.Get(ctx, c.prefix+"stats:hits")
+        missCmd := pipe.Get(ctx, c.prefix+"stats:misses")
+
+        _, err := pipe.Exec(ctx)
+        if err != nil &amp;&amp; err != redis.Nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to get cache stats: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">stats := &amp;CacheStats{}
+
+        if hitCmd.Err() == nil </span><span class="cov0" title="0">{
+                hits, _ := hitCmd.Int64()
+                stats.HitCount = hits
+        }</span>
+
+        <span class="cov0" title="0">if missCmd.Err() == nil </span><span class="cov0" title="0">{
+                misses, _ := missCmd.Int64()
+                stats.MissCount = misses
+        }</span>
+
+        // Get key count for WebFinger records
+        <span class="cov0" title="0">webfingerPattern := c.prefix + "webfinger:*"
+        keys, err := c.client.Keys(ctx, webfingerPattern).Result()
+        if err == nil </span><span class="cov0" title="0">{
+                stats.KeyCount = int64(len(keys))
+        }</span>
+
+        // Get memory usage (Redis INFO command)
+        <span class="cov0" title="0">_, err = c.client.Info(ctx, "memory").Result()
+        if err == nil </span><span class="cov0" title="0">{
+                // Parse memory usage from INFO output (simplified)
+                // In production, you'd want more robust parsing
+                stats.MemoryUsage = 0 // Placeholder
+        }</span>
+
+        <span class="cov0" title="0">return stats, nil</span>
+}
+
+// Close closes the Redis connection
+func (c *RedisCache) Close() error <span class="cov0" title="0">{
+        return c.client.Close()
+}</span>
+
+// RecordMiss increments the cache miss counter
+func (c *RedisCache) RecordMiss(ctx context.Context) <span class="cov0" title="0">{
+        c.client.Incr(ctx, c.prefix+"stats:misses")
+}</span>
+
+// webfingerKey generates a cache key for WebFinger records
+func (c *RedisCache) webfingerKey(subject string) string <span class="cov0" title="0">{
+        return c.prefix + "webfinger:" + subject
+}</span>
+
+// searchKey generates a cache key for search results
+func (c *RedisCache) searchKey(query string) string <span class="cov0" title="0">{
+        return c.prefix + "search:" + query
+}</span>
+
+// Cleanup removes expired and unused cache entries
+func (c *RedisCache) Cleanup(ctx context.Context) error <span class="cov0" title="0">{
+        // Redis handles TTL automatically, but we can do additional cleanup
+
+        // Remove empty search result markers older than 1 hour
+        searchPattern := c.prefix + "search:*"
+        keys, err := c.client.Keys(ctx, searchPattern).Result()
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to scan search keys: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">for _, key := range keys </span><span class="cov0" title="0">{
+                // Check if the list contains only the empty marker
+                results, err := c.client.LRange(ctx, key, 0, -1).Result()
+                if err != nil </span><span class="cov0" title="0">{
+                        continue</span>
+                }
+
+                <span class="cov0" title="0">if len(results) == 1 &amp;&amp; results[0] == "__EMPTY__" </span><span class="cov0" title="0">{
+                        // Check TTL and delete if older than 1 hour
+                        ttl, err := c.client.TTL(ctx, key).Result()
+                        if err == nil &amp;&amp; ttl &gt; 0 &amp;&amp; ttl &lt; 23*time.Hour </span><span class="cov0" title="0">{
+                                c.client.Del(ctx, key)
+                        }</span>
+                }
+        }
+
+        <span class="cov0" title="0">return nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file6" style="display: none">package config
+
+import (
+        "fmt"
+        "strings"
+
+        "github.com/spf13/viper"
+)
+
+type Config struct {
+        Server   ServerConfig   `mapstructure:"server"`
+        Database DatabaseConfig `mapstructure:"database"`
+        Redis    RedisConfig    `mapstructure:"redis"`
+        Auth     AuthConfig     `mapstructure:"auth"`
+        Security SecurityConfig `mapstructure:"security"`
+        Logging  LoggingConfig  `mapstructure:"logging"`
+}
+
+type ServerConfig struct {
+        Port     string `mapstructure:"port"`
+        Host     string `mapstructure:"host"`
+        CertPath string `mapstructure:"cert_path"`
+        KeyPath  string `mapstructure:"key_path"`
+        Env      string `mapstructure:"env"`
+}
+
+type DatabaseConfig struct {
+        URL          string `mapstructure:"url"`
+        MaxOpenConns int    `mapstructure:"max_open_conns"`
+        MaxIdleConns int    `mapstructure:"max_idle_conns"`
+}
+
+type RedisConfig struct {
+        URL      string `mapstructure:"url"`
+        Password string `mapstructure:"password"`
+        DB       int    `mapstructure:"db"`
+}
+
+type AuthConfig struct {
+        JWTSecret        string `mapstructure:"jwt_secret"`
+        SessionSecret    string `mapstructure:"session_secret"`
+        TokenExpiryHours int    `mapstructure:"token_expiry_hours"`
+}
+
+type SecurityConfig struct {
+        RateLimitRPS   int      `mapstructure:"rate_limit_rps"`
+        RateLimitBurst int      `mapstructure:"rate_limit_burst"`
+        AllowedOrigins []string `mapstructure:"allowed_origins"`
+        TrustedProxies []string `mapstructure:"trusted_proxies"`
+        EnableCSP      bool     `mapstructure:"enable_csp"`
+        EnableHSTS     bool     `mapstructure:"enable_hsts"`
+        ForceHTTPS     bool     `mapstructure:"force_https"`
+}
+
+type LoggingConfig struct {
+        Level  string `mapstructure:"level"`
+        Format string `mapstructure:"format"`
+        Output string `mapstructure:"output"`
+}
+
+// Load reads configuration from various sources (env vars, config files, defaults)
+func Load() (*Config, error) <span class="cov0" title="0">{
+        v := viper.New()
+
+        // Set defaults
+        setDefaults(v)
+
+        // Environment variables
+        v.SetEnvPrefix("ASDF")
+        v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+        v.AutomaticEnv()
+
+        // Config file (optional)
+        v.SetConfigName("config")
+        v.SetConfigType("yaml")
+        v.AddConfigPath(".")
+        v.AddConfigPath("./config")
+
+        // Read config file if it exists (ignore errors)
+        v.ReadInConfig()
+
+        var config Config
+        if err := v.Unmarshal(&amp;config); err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to unmarshal config: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">return &amp;config, nil</span>
+}
+
+func setDefaults(v *viper.Viper) <span class="cov0" title="0">{
+        // Server defaults
+        v.SetDefault("server.port", "8080")
+        v.SetDefault("server.host", "0.0.0.0")
+        v.SetDefault("server.env", "production")
+
+        // Database defaults
+        v.SetDefault("database.max_open_conns", 25)
+        v.SetDefault("database.max_idle_conns", 5)
+
+        // Redis defaults
+        v.SetDefault("redis.url", "redis://localhost:6379")
+        v.SetDefault("redis.db", 0)
+
+        // Auth defaults
+        v.SetDefault("auth.token_expiry_hours", 24)
+
+        // Security defaults
+        v.SetDefault("security.rate_limit_rps", 10)
+        v.SetDefault("security.rate_limit_burst", 20)
+        v.SetDefault("security.allowed_origins", []string{"*"})
+        v.SetDefault("security.enable_csp", true)
+        v.SetDefault("security.enable_hsts", true)
+        v.SetDefault("security.force_https", true)
+
+        // Logging defaults
+        v.SetDefault("logging.level", "info")
+        v.SetDefault("logging.format", "json")
+        v.SetDefault("logging.output", "stdout")
+}</span>
+
+// IsTestEnv returns true if running in test environment
+func (c *Config) IsTestEnv() bool <span class="cov0" title="0">{
+        return c.Server.Env == "test" || c.Server.Env == "testing"
+}</span>
+
+// IsDevelopmentEnv returns true if running in development environment
+func (c *Config) IsDevelopmentEnv() bool <span class="cov0" title="0">{
+        return c.Server.Env == "development" || c.Server.Env == "dev"
+}</span>
+
+// IsProductionEnv returns true if running in production environment
+func (c *Config) IsProductionEnv() bool <span class="cov0" title="0">{
+        return c.Server.Env == "production" || c.Server.Env == "prod"
+}</span>
+</pre>
+		
+		<pre class="file" id="file7" style="display: none">package middleware
+
+import (
+        "context"
+        "net"
+        "net/http"
+        "strings"
+        "sync"
+        "time"
+
+        "golang.org/x/time/rate"
+)
+
+// RateLimiter provides rate limiting functionality
+type RateLimiter struct {
+        limiters map[string]*rate.Limiter
+        mu       sync.RWMutex
+        rps      rate.Limit
+        burst    int
+}
+
+// NewRateLimiter creates a new rate limiter
+func NewRateLimiter(rps int, burst int) *RateLimiter <span class="cov0" title="0">{
+        return &amp;RateLimiter{
+                limiters: make(map[string]*rate.Limiter),
+                rps:      rate.Limit(rps),
+                burst:    burst,
+        }
+}</span>
+
+// RateLimit middleware for rate limiting requests
+func (rl *RateLimiter) RateLimit(next http.Handler) http.Handler <span class="cov0" title="0">{
+        return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) </span><span class="cov0" title="0">{
+                // Get client IP
+                ip := getClientIP(r)
+
+                // Get or create limiter for this IP
+                limiter := rl.getLimiter(ip)
+
+                if !limiter.Allow() </span><span class="cov0" title="0">{
+                        http.Error(w, "Too many requests", http.StatusTooManyRequests)
+                        return
+                }</span>
+
+                <span class="cov0" title="0">next.ServeHTTP(w, r)</span>
+        })
+}
+
+func (rl *RateLimiter) getLimiter(key string) *rate.Limiter <span class="cov0" title="0">{
+        rl.mu.Lock()
+        defer rl.mu.Unlock()
+
+        limiter, exists := rl.limiters[key]
+        if !exists </span><span class="cov0" title="0">{
+                limiter = rate.NewLimiter(rl.rps, rl.burst)
+                rl.limiters[key] = limiter
+        }</span>
+
+        <span class="cov0" title="0">return limiter</span>
+}
+
+// Cleanup removes old limiters (should be called periodically)
+func (rl *RateLimiter) Cleanup() <span class="cov0" title="0">{
+        rl.mu.Lock()
+        defer rl.mu.Unlock()
+
+        // Simple cleanup - in production you'd want more sophisticated logic
+        if len(rl.limiters) &gt; 10000 </span><span class="cov0" title="0">{
+                rl.limiters = make(map[string]*rate.Limiter)
+        }</span>
+}
+
+// CORS middleware for handling cross-origin requests
+func CORS(allowedOrigins []string, allowCredentials bool) func(http.Handler) http.Handler <span class="cov0" title="0">{
+        return func(next http.Handler) http.Handler </span><span class="cov0" title="0">{
+                return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) </span><span class="cov0" title="0">{
+                        origin := r.Header.Get("Origin")
+
+                        // Check if origin is allowed
+                        allowed := false
+                        for _, allowedOrigin := range allowedOrigins </span><span class="cov0" title="0">{
+                                if allowedOrigin == "*" || allowedOrigin == origin </span><span class="cov0" title="0">{
+                                        allowed = true
+                                        break</span>
+                                }
+                        }
+
+                        <span class="cov0" title="0">if allowed </span><span class="cov0" title="0">{
+                                w.Header().Set("Access-Control-Allow-Origin", origin)
+                        }</span>
+
+                        <span class="cov0" title="0">if allowCredentials </span><span class="cov0" title="0">{
+                                w.Header().Set("Access-Control-Allow-Credentials", "true")
+                        }</span>
+
+                        <span class="cov0" title="0">w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+                        w.Header().Set("Access-Control-Allow-Headers", "Accept, Authorization, Content-Type, X-CSRF-Token")
+                        w.Header().Set("Access-Control-Max-Age", "86400")
+
+                        if r.Method == "OPTIONS" </span><span class="cov0" title="0">{
+                                w.WriteHeader(http.StatusOK)
+                                return
+                        }</span>
+
+                        <span class="cov0" title="0">next.ServeHTTP(w, r)</span>
+                })
+        }
+}
+
+// SecurityHeaders adds security headers to responses
+func SecurityHeaders(enableCSP, enableHSTS bool) func(http.Handler) http.Handler <span class="cov0" title="0">{
+        return func(next http.Handler) http.Handler </span><span class="cov0" title="0">{
+                return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) </span><span class="cov0" title="0">{
+                        // Basic security headers
+                        w.Header().Set("X-Content-Type-Options", "nosniff")
+                        w.Header().Set("X-Frame-Options", "DENY")
+                        w.Header().Set("X-XSS-Protection", "1; mode=block")
+                        w.Header().Set("Referrer-Policy", "strict-origin-when-cross-origin")
+
+                        // Content Security Policy
+                        if enableCSP </span><span class="cov0" title="0">{
+                                csp := "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; connect-src 'self'"
+                                w.Header().Set("Content-Security-Policy", csp)
+                        }</span>
+
+                        // HTTP Strict Transport Security
+                        <span class="cov0" title="0">if enableHSTS &amp;&amp; r.TLS != nil </span><span class="cov0" title="0">{
+                                w.Header().Set("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload")
+                        }</span>
+
+                        <span class="cov0" title="0">next.ServeHTTP(w, r)</span>
+                })
+        }
+}
+
+// HTTPSRedirect redirects HTTP requests to HTTPS
+func HTTPSRedirect(force bool) func(http.Handler) http.Handler <span class="cov0" title="0">{
+        return func(next http.Handler) http.Handler </span><span class="cov0" title="0">{
+                return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) </span><span class="cov0" title="0">{
+                        if force &amp;&amp; r.TLS == nil &amp;&amp; r.Header.Get("X-Forwarded-Proto") != "https" </span><span class="cov0" title="0">{
+                                // Construct HTTPS URL
+                                httpsURL := "https://" + r.Host + r.RequestURI
+                                http.Redirect(w, r, httpsURL, http.StatusMovedPermanently)
+                                return
+                        }</span>
+
+                        <span class="cov0" title="0">next.ServeHTTP(w, r)</span>
+                })
+        }
+}
+
+// Timeout middleware adds request timeout
+func Timeout(timeout time.Duration) func(http.Handler) http.Handler <span class="cov0" title="0">{
+        return func(next http.Handler) http.Handler </span><span class="cov0" title="0">{
+                return http.TimeoutHandler(next, timeout, "Request timeout")
+        }</span>
+}
+
+// Logging middleware for request logging
+func Logging(logger func(string, ...interface{})) func(http.Handler) http.Handler <span class="cov0" title="0">{
+        return func(next http.Handler) http.Handler </span><span class="cov0" title="0">{
+                return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) </span><span class="cov0" title="0">{
+                        start := time.Now()
+
+                        // Wrap ResponseWriter to capture status code
+                        ww := &amp;responseWriter{ResponseWriter: w, statusCode: http.StatusOK}
+
+                        next.ServeHTTP(ww, r)
+
+                        duration := time.Since(start)
+                        logger("HTTP %s %s %d %v %s",
+                                r.Method,
+                                r.RequestURI,
+                                ww.statusCode,
+                                duration,
+                                getClientIP(r),
+                        )
+                }</span>)
+        }
+}
+
+type responseWriter struct {
+        http.ResponseWriter
+        statusCode int
+}
+
+func (rw *responseWriter) WriteHeader(code int) <span class="cov0" title="0">{
+        rw.statusCode = code
+        rw.ResponseWriter.WriteHeader(code)
+}</span>
+
+// TrustedProxies middleware for setting trusted proxy IPs
+func TrustedProxies(trustedProxies []string) func(http.Handler) http.Handler <span class="cov0" title="0">{
+        // Parse trusted proxy CIDRs
+        var trustedNets []*net.IPNet
+        for _, proxy := range trustedProxies </span><span class="cov0" title="0">{
+                if !strings.Contains(proxy, "/") </span><span class="cov0" title="0">{
+                        proxy += "/32" // Assume single IP
+                }</span>
+                <span class="cov0" title="0">_, network, err := net.ParseCIDR(proxy)
+                if err == nil </span><span class="cov0" title="0">{
+                        trustedNets = append(trustedNets, network)
+                }</span>
+        }
+
+        <span class="cov0" title="0">return func(next http.Handler) http.Handler </span><span class="cov0" title="0">{
+                return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) </span><span class="cov0" title="0">{
+                        // Add trusted proxy information to context
+                        clientIP := getClientIP(r)
+                        isTrusted := false
+
+                        if clientIPNet := net.ParseIP(clientIP); clientIPNet != nil </span><span class="cov0" title="0">{
+                                for _, network := range trustedNets </span><span class="cov0" title="0">{
+                                        if network.Contains(clientIPNet) </span><span class="cov0" title="0">{
+                                                isTrusted = true
+                                                break</span>
+                                        }
+                                }
+                        }
+
+                        <span class="cov0" title="0">ctx := context.WithValue(r.Context(), "trusted_proxy", isTrusted)
+                        r = r.WithContext(ctx)
+
+                        next.ServeHTTP(w, r)</span>
+                })
+        }
+}
+
+// getClientIP extracts the real client IP from the request
+func getClientIP(r *http.Request) string <span class="cov0" title="0">{
+        // Check X-Forwarded-For header
+        if xff := r.Header.Get("X-Forwarded-For"); xff != "" </span><span class="cov0" title="0">{
+                // Take the first IP in the list
+                if ips := strings.Split(xff, ","); len(ips) &gt; 0 </span><span class="cov0" title="0">{
+                        return strings.TrimSpace(ips[0])
+                }</span>
+        }
+
+        // Check X-Real-IP header
+        <span class="cov0" title="0">if xri := r.Header.Get("X-Real-IP"); xri != "" </span><span class="cov0" title="0">{
+                return xri
+        }</span>
+
+        // Fall back to RemoteAddr
+        <span class="cov0" title="0">ip, _, err := net.SplitHostPort(r.RemoteAddr)
+        if err != nil </span><span class="cov0" title="0">{
+                return r.RemoteAddr
+        }</span>
+        <span class="cov0" title="0">return ip</span>
+}
+</pre>
+		
+		<pre class="file" id="file8" style="display: none">package migrations
+
+import (
+        "database/sql"
+        "fmt"
+        "log"
+
+        "github.com/golang-migrate/migrate/v4"
+        "github.com/golang-migrate/migrate/v4/database/postgres"
+        _ "github.com/golang-migrate/migrate/v4/source/file"
+        _ "github.com/jackc/pgx/v5/stdlib"
+)
+
+type Migrator struct {
+        db          *sql.DB
+        migrate     *migrate.Migrate
+        sourceURL   string
+        databaseURL string
+}
+
+// NewMigrator creates a new migration instance
+func NewMigrator(databaseURL string) (*Migrator, error) <span class="cov0" title="0">{
+        db, err := sql.Open("pgx", databaseURL)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to open database: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">driver, err := postgres.WithInstance(db, &amp;postgres.Config{})
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to create postgres driver: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">sourceURL := "file://internal/migrations/sql"
+        m, err := migrate.NewWithDatabaseInstance(sourceURL, "postgres", driver)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to create migrate instance: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">return &amp;Migrator{
+                db:          db,
+                migrate:     m,
+                sourceURL:   sourceURL,
+                databaseURL: databaseURL,
+        }, nil</span>
+}
+
+// Up runs all pending migrations
+func (m *Migrator) Up() error <span class="cov0" title="0">{
+        err := m.migrate.Up()
+        if err != nil &amp;&amp; err != migrate.ErrNoChange </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to run migrations: %w", err)
+        }</span>
+        <span class="cov0" title="0">log.Println("Migrations completed successfully")
+        return nil</span>
+}
+
+// Down rolls back one migration
+func (m *Migrator) Down() error <span class="cov0" title="0">{
+        err := m.migrate.Steps(-1)
+        if err != nil &amp;&amp; err != migrate.ErrNoChange </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to rollback migration: %w", err)
+        }</span>
+        <span class="cov0" title="0">log.Println("Migration rollback completed")
+        return nil</span>
+}
+
+// Version returns the current migration version
+func (m *Migrator) Version() (uint, bool, error) <span class="cov0" title="0">{
+        version, dirty, err := m.migrate.Version()
+        if err != nil &amp;&amp; err != migrate.ErrNilVersion </span><span class="cov0" title="0">{
+                return 0, false, fmt.Errorf("failed to get migration version: %w", err)
+        }</span>
+        <span class="cov0" title="0">return version, dirty, nil</span>
+}
+
+// Force sets the migration version without running migrations
+func (m *Migrator) Force(version int) error <span class="cov0" title="0">{
+        err := m.migrate.Force(version)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to force migration version: %w", err)
+        }</span>
+        <span class="cov0" title="0">log.Printf("Forced migration version to %d", version)
+        return nil</span>
+}
+
+// Close closes the migrator and database connection
+func (m *Migrator) Close() error <span class="cov0" title="0">{
+        sourceErr, dbErr := m.migrate.Close()
+        if sourceErr != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to close migration source: %w", sourceErr)
+        }</span>
+        <span class="cov0" title="0">if dbErr != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to close database: %w", dbErr)
+        }</span>
+        <span class="cov0" title="0">return nil</span>
+}
+
+// CreateMigration creates new up and down migration files
+func CreateMigration(name string) error <span class="cov0" title="0">{
+        // This would typically use migrate CLI or implement file creation
+        log.Printf("Create migration files for: %s", name)
+        log.Println("Run: migrate create -ext sql -dir internal/migrations/sql -seq " + name)
+        return nil
+}</span>
+</pre>
+		
+		<pre class="file" id="file9" style="display: none">package monitoring
+
+import (
+        "context"
+        "net/http"
+        "strconv"
+        "time"
+
+        "github.com/prometheus/client_golang/prometheus"
+        "github.com/prometheus/client_golang/prometheus/promhttp"
+        "github.com/sirupsen/logrus"
+)
+
+var (
+        // HTTP metrics
+        httpRequestsTotal = prometheus.NewCounterVec(
+                prometheus.CounterOpts{
+                        Name: "http_requests_total",
+                        Help: "Total number of HTTP requests",
+                },
+                []string{"method", "endpoint", "status_code"},
+        )
+
+        httpRequestDuration = prometheus.NewHistogramVec(
+                prometheus.HistogramOpts{
+                        Name:    "http_request_duration_seconds",
+                        Help:    "Duration of HTTP requests",
+                        Buckets: []float64{0.001, 0.01, 0.1, 0.5, 1.0, 2.5, 5.0, 10.0},
+                },
+                []string{"method", "endpoint", "status_code"},
+        )
+
+        // WebFinger specific metrics
+        webfingerRequestsTotal = prometheus.NewCounterVec(
+                prometheus.CounterOpts{
+                        Name: "webfinger_requests_total",
+                        Help: "Total number of WebFinger requests",
+                },
+                []string{"status"},
+        )
+
+        webfingerCacheHits = prometheus.NewCounter(
+                prometheus.CounterOpts{
+                        Name: "webfinger_cache_hits_total",
+                        Help: "Total number of WebFinger cache hits",
+                },
+        )
+
+        webfingerCacheMisses = prometheus.NewCounter(
+                prometheus.CounterOpts{
+                        Name: "webfinger_cache_misses_total",
+                        Help: "Total number of WebFinger cache misses",
+                },
+        )
+
+        // Database metrics
+        databaseConnectionsActive = prometheus.NewGauge(
+                prometheus.GaugeOpts{
+                        Name: "database_connections_active",
+                        Help: "Number of active database connections",
+                },
+        )
+
+        databaseConnectionsIdle = prometheus.NewGauge(
+                prometheus.GaugeOpts{
+                        Name: "database_connections_idle",
+                        Help: "Number of idle database connections",
+                },
+        )
+
+        databaseQueryDuration = prometheus.NewHistogramVec(
+                prometheus.HistogramOpts{
+                        Name:    "database_query_duration_seconds",
+                        Help:    "Duration of database queries",
+                        Buckets: []float64{0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1.0},
+                },
+                []string{"operation"},
+        )
+
+        // Authentication metrics
+        authAttemptsTotal = prometheus.NewCounterVec(
+                prometheus.CounterOpts{
+                        Name: "auth_attempts_total",
+                        Help: "Total number of authentication attempts",
+                },
+                []string{"result"},
+        )
+
+        activeSessionsGauge = prometheus.NewGauge(
+                prometheus.GaugeOpts{
+                        Name: "active_sessions_total",
+                        Help: "Number of active user sessions",
+                },
+        )
+)
+
+// Metrics holds all the monitoring components
+type Metrics struct {
+        registry *prometheus.Registry
+        logger   *logrus.Logger
+}
+
+// NewMetrics creates a new metrics instance
+func NewMetrics() *Metrics <span class="cov0" title="0">{
+        // Create custom registry
+        registry := prometheus.NewRegistry()
+
+        // Register metrics
+        registry.MustRegister(
+                httpRequestsTotal,
+                httpRequestDuration,
+                webfingerRequestsTotal,
+                webfingerCacheHits,
+                webfingerCacheMisses,
+                databaseConnectionsActive,
+                databaseConnectionsIdle,
+                databaseQueryDuration,
+                authAttemptsTotal,
+                activeSessionsGauge,
+        )
+
+        // Setup structured logging
+        logger := logrus.New()
+        logger.SetFormatter(&amp;logrus.JSONFormatter{
+                TimestampFormat: time.RFC3339,
+        })
+
+        return &amp;Metrics{
+                registry: registry,
+                logger:   logger,
+        }
+}</span>
+
+// HTTPMetricsMiddleware adds Prometheus metrics to HTTP requests
+func (m *Metrics) HTTPMetricsMiddleware(next http.Handler) http.Handler <span class="cov0" title="0">{
+        return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) </span><span class="cov0" title="0">{
+                start := time.Now()
+
+                // Wrap ResponseWriter to capture status code
+                ww := &amp;responseWriter{ResponseWriter: w, statusCode: http.StatusOK}
+
+                // Process request
+                next.ServeHTTP(ww, r)
+
+                // Record metrics
+                duration := time.Since(start).Seconds()
+                statusCode := strconv.Itoa(ww.statusCode)
+
+                httpRequestsTotal.WithLabelValues(r.Method, r.URL.Path, statusCode).Inc()
+                httpRequestDuration.WithLabelValues(r.Method, r.URL.Path, statusCode).Observe(duration)
+
+                // Log request
+                m.logger.WithFields(logrus.Fields{
+                        "method":     r.Method,
+                        "path":       r.URL.Path,
+                        "status":     ww.statusCode,
+                        "duration":   duration,
+                        "ip":         getClientIP(r),
+                        "user_agent": r.Header.Get("User-Agent"),
+                }).Info("HTTP request")
+        }</span>)
+}
+
+// RecordWebFingerRequest records a WebFinger request
+func (m *Metrics) RecordWebFingerRequest(status string) <span class="cov0" title="0">{
+        webfingerRequestsTotal.WithLabelValues(status).Inc()
+}</span>
+
+// RecordCacheHit records a cache hit
+func (m *Metrics) RecordCacheHit() <span class="cov0" title="0">{
+        webfingerCacheHits.Inc()
+}</span>
+
+// RecordCacheMiss records a cache miss
+func (m *Metrics) RecordCacheMiss() <span class="cov0" title="0">{
+        webfingerCacheMisses.Inc()
+}</span>
+
+// RecordDatabaseQuery records a database query duration
+func (m *Metrics) RecordDatabaseQuery(operation string, duration time.Duration) <span class="cov0" title="0">{
+        databaseQueryDuration.WithLabelValues(operation).Observe(duration.Seconds())
+}</span>
+
+// UpdateDatabaseConnections updates database connection metrics
+func (m *Metrics) UpdateDatabaseConnections(active, idle int) <span class="cov0" title="0">{
+        databaseConnectionsActive.Set(float64(active))
+        databaseConnectionsIdle.Set(float64(idle))
+}</span>
+
+// RecordAuthAttempt records an authentication attempt
+func (m *Metrics) RecordAuthAttempt(result string) <span class="cov0" title="0">{
+        authAttemptsTotal.WithLabelValues(result).Inc()
+}</span>
+
+// UpdateActiveSessions updates the active sessions gauge
+func (m *Metrics) UpdateActiveSessions(count int) <span class="cov0" title="0">{
+        activeSessionsGauge.Set(float64(count))
+}</span>
+
+// Handler returns the Prometheus metrics handler
+func (m *Metrics) Handler() http.Handler <span class="cov0" title="0">{
+        return promhttp.HandlerFor(m.registry, promhttp.HandlerOpts{
+                EnableOpenMetrics: true,
+        })
+}</span>
+
+// Logger returns the structured logger
+func (m *Metrics) Logger() *logrus.Logger <span class="cov0" title="0">{
+        return m.logger
+}</span>
+
+// HealthCheckHandler provides a health check endpoint
+func (m *Metrics) HealthCheckHandler() http.HandlerFunc <span class="cov0" title="0">{
+        return func(w http.ResponseWriter, r *http.Request) </span><span class="cov0" title="0">{
+                w.Header().Set("Content-Type", "application/json")
+                w.WriteHeader(http.StatusOK)
+
+                // Simple JSON encoding without importing encoding/json again
+                response := `{"status":"healthy","timestamp":` + strconv.FormatInt(time.Now().Unix(), 10) + `,"version":"1.0.0"}`
+                w.Write([]byte(response))
+
+                m.logger.WithField("component", "healthcheck").Debug("Health check requested")
+        }</span>
+} // DatabaseMetricsMiddleware wraps database operations with metrics
+func (m *Metrics) DatabaseMetricsMiddleware(operation string) func(func() error) error <span class="cov0" title="0">{
+        return func(dbFunc func() error) error </span><span class="cov0" title="0">{
+                start := time.Now()
+                err := dbFunc()
+                duration := time.Since(start)
+
+                m.RecordDatabaseQuery(operation, duration)
+
+                if err != nil </span><span class="cov0" title="0">{
+                        m.logger.WithFields(logrus.Fields{
+                                "operation": operation,
+                                "duration":  duration,
+                                "error":     err.Error(),
+                        }).Error("Database operation failed")
+                }</span> else<span class="cov0" title="0"> {
+                        m.logger.WithFields(logrus.Fields{
+                                "operation": operation,
+                                "duration":  duration,
+                        }).Debug("Database operation completed")
+                }</span>
+
+                <span class="cov0" title="0">return err</span>
+        }
+}
+
+// LogLevel sets the logging level
+func (m *Metrics) SetLogLevel(level string) error <span class="cov0" title="0">{
+        parsedLevel, err := logrus.ParseLevel(level)
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+        <span class="cov0" title="0">m.logger.SetLevel(parsedLevel)
+        return nil</span>
+}
+
+// LogWithFields creates a logger with predefined fields
+func (m *Metrics) LogWithFields(fields logrus.Fields) *logrus.Entry <span class="cov0" title="0">{
+        return m.logger.WithFields(fields)
+}</span>
+
+// responseWriter wraps http.ResponseWriter to capture status code
+type responseWriter struct {
+        http.ResponseWriter
+        statusCode int
+}
+
+func (rw *responseWriter) WriteHeader(code int) <span class="cov0" title="0">{
+        rw.statusCode = code
+        rw.ResponseWriter.WriteHeader(code)
+}</span>
+
+// getClientIP extracts client IP from request
+func getClientIP(r *http.Request) string <span class="cov0" title="0">{
+        // Check X-Forwarded-For header
+        if xff := r.Header.Get("X-Forwarded-For"); xff != "" </span><span class="cov0" title="0">{
+                return xff
+        }</span>
+
+        // Check X-Real-IP header
+        <span class="cov0" title="0">if xri := r.Header.Get("X-Real-IP"); xri != "" </span><span class="cov0" title="0">{
+                return xri
+        }</span>
+
+        // Fall back to RemoteAddr
+        <span class="cov0" title="0">return r.RemoteAddr</span>
+}
+
+// StartBackgroundTasks starts background monitoring tasks
+func (m *Metrics) StartBackgroundTasks(ctx context.Context) <span class="cov0" title="0">{
+        go func() </span><span class="cov0" title="0">{
+                ticker := time.NewTicker(30 * time.Second)
+                defer ticker.Stop()
+
+                for </span><span class="cov0" title="0">{
+                        select </span>{
+                        case &lt;-ctx.Done():<span class="cov0" title="0">
+                                return</span>
+                        case &lt;-ticker.C:<span class="cov0" title="0">
+                                // Perform periodic tasks like updating connection metrics
+                                m.logger.WithField("component", "monitoring").Debug("Periodic metrics update")</span>
+                        }
+                }
+        }()
+}
+</pre>
+		
+		<pre class="file" id="file10" style="display: none">package resource
+
+import (
+        "errors"
+        "net/http"
+        "strings"
+)
+
+func ParseResource(request *http.Request) (string, error) <span class="cov8" title="1">{
+        resource := request.URL.Query().Get("resource")
+        if resource == "" </span><span class="cov0" title="0">{
+                return "", errors.New("asdf: missing resource parameter")
+        }</span>
+
+        <span class="cov8" title="1">acct, err := GetSubject(resource)
+        if err != nil </span><span class="cov0" title="0">{
+                return "", err
+        }</span>
+
+        <span class="cov8" title="1">return acct, nil</span>
+}
+
+func GetSubject(resource string) (string, error) <span class="cov8" title="1">{
+        acct := strings.TrimPrefix(resource, "acct:")
+        if !IsValidResource(acct) </span><span class="cov0" title="0">{
+                return "", errors.New("asdf: invalid resource parameter")
+        }</span>
+        <span class="cov8" title="1">return acct, nil</span>
+}
+
+func IsValidResource(resource string) bool <span class="cov8" title="1">{
+        return strings.Contains(resource, "@")
+}</span>
+</pre>
+		
+		<pre class="file" id="file11" style="display: none">package rest
+
+import (
+        "asdf/internal/auth"
+        "context"
+        "encoding/json"
+        "net/http"
+        "strings"
+        "time"
+)
+
+type AuthHandler struct {
+        authService *auth.AuthService
+        userStore   auth.UserStore
+}
+
+type LoginRequest struct {
+        Username string `json:"username"`
+        Password string `json:"password"`
+}
+
+type RegisterRequest struct {
+        Username string `json:"username"`
+        Email    string `json:"email"`
+        Password string `json:"password"`
+}
+
+type LoginResponse struct {
+        Token     string     `json:"token"`
+        User      *auth.User `json:"user"`
+        ExpiresAt time.Time  `json:"expires_at"`
+}
+
+type ErrorResponse struct {
+        Error   string `json:"error"`
+        Message string `json:"message,omitempty"`
+}
+
+// NewAuthHandler creates a new authentication handler
+func NewAuthHandler(authService *auth.AuthService, userStore auth.UserStore) *AuthHandler <span class="cov0" title="0">{
+        return &amp;AuthHandler{
+                authService: authService,
+                userStore:   userStore,
+        }
+}</span>
+
+// HandleLogin handles user login
+func (h *AuthHandler) HandleLogin(w http.ResponseWriter, r *http.Request) <span class="cov0" title="0">{
+        if r.Method != http.MethodPost </span><span class="cov0" title="0">{
+                http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+                return
+        }</span>
+
+        <span class="cov0" title="0">var req LoginRequest
+        if err := json.NewDecoder(r.Body).Decode(&amp;req); err != nil </span><span class="cov0" title="0">{
+                h.writeError(w, http.StatusBadRequest, "Invalid JSON", err.Error())
+                return
+        }</span>
+
+        // Validate input
+        <span class="cov0" title="0">if req.Username == "" || req.Password == "" </span><span class="cov0" title="0">{
+                h.writeError(w, http.StatusBadRequest, "Username and password required", "")
+                return
+        }</span>
+
+        // Find user by username or email
+        <span class="cov0" title="0">var user *auth.User
+        var err error
+
+        if strings.Contains(req.Username, "@") </span><span class="cov0" title="0">{
+                user, err = h.userStore.GetUserByEmail(r.Context(), req.Username)
+        }</span> else<span class="cov0" title="0"> {
+                user, err = h.userStore.GetUserByUsername(r.Context(), req.Username)
+        }</span>
+
+        <span class="cov0" title="0">if err != nil || user == nil </span><span class="cov0" title="0">{
+                h.writeError(w, http.StatusUnauthorized, "Invalid credentials", "")
+                return
+        }</span>
+
+        // Check if user is active
+        <span class="cov0" title="0">if !user.IsActive </span><span class="cov0" title="0">{
+                h.writeError(w, http.StatusForbidden, "Account is disabled", "")
+                return
+        }</span>
+
+        // Verify password
+        <span class="cov0" title="0">if !h.authService.VerifyPassword(req.Password, user.PasswordHash) </span><span class="cov0" title="0">{
+                h.writeError(w, http.StatusUnauthorized, "Invalid credentials", "")
+                return
+        }</span>
+
+        // Update last login
+        <span class="cov0" title="0">_ = h.userStore.UpdateLastLogin(r.Context(), user.ID)
+
+        // Generate JWT token
+        ipAddress := getClientIP(r)
+        userAgent := r.Header.Get("User-Agent")
+
+        token, err := h.authService.GenerateToken(r.Context(), user, ipAddress, userAgent)
+        if err != nil </span><span class="cov0" title="0">{
+                h.writeError(w, http.StatusInternalServerError, "Failed to generate token", err.Error())
+                return
+        }</span>
+
+        // Calculate expiry time
+        <span class="cov0" title="0">expiresAt := time.Now().Add(24 * time.Hour) // Should match config
+
+        response := LoginResponse{
+                Token:     token,
+                User:      user,
+                ExpiresAt: expiresAt,
+        }
+
+        // Remove password hash from response
+        response.User.PasswordHash = ""
+
+        w.Header().Set("Content-Type", "application/json")
+        json.NewEncoder(w).Encode(response)</span>
+}
+
+// HandleRegister handles user registration
+func (h *AuthHandler) HandleRegister(w http.ResponseWriter, r *http.Request) <span class="cov0" title="0">{
+        if r.Method != http.MethodPost </span><span class="cov0" title="0">{
+                http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+                return
+        }</span>
+
+        <span class="cov0" title="0">var req RegisterRequest
+        if err := json.NewDecoder(r.Body).Decode(&amp;req); err != nil </span><span class="cov0" title="0">{
+                h.writeError(w, http.StatusBadRequest, "Invalid JSON", err.Error())
+                return
+        }</span>
+
+        // Validate input
+        <span class="cov0" title="0">if req.Username == "" || req.Email == "" || req.Password == "" </span><span class="cov0" title="0">{
+                h.writeError(w, http.StatusBadRequest, "Username, email, and password required", "")
+                return
+        }</span>
+
+        // Basic validation
+        <span class="cov0" title="0">if len(req.Password) &lt; 8 </span><span class="cov0" title="0">{
+                h.writeError(w, http.StatusBadRequest, "Password must be at least 8 characters", "")
+                return
+        }</span>
+
+        <span class="cov0" title="0">if !strings.Contains(req.Email, "@") </span><span class="cov0" title="0">{
+                h.writeError(w, http.StatusBadRequest, "Invalid email format", "")
+                return
+        }</span>
+
+        // Check if username already exists
+        <span class="cov0" title="0">existingUser, _ := h.userStore.GetUserByUsername(r.Context(), req.Username)
+        if existingUser != nil </span><span class="cov0" title="0">{
+                h.writeError(w, http.StatusConflict, "Username already exists", "")
+                return
+        }</span>
+
+        // Check if email already exists
+        <span class="cov0" title="0">existingUser, _ = h.userStore.GetUserByEmail(r.Context(), req.Email)
+        if existingUser != nil </span><span class="cov0" title="0">{
+                h.writeError(w, http.StatusConflict, "Email already exists", "")
+                return
+        }</span>
+
+        // Hash password
+        <span class="cov0" title="0">passwordHash, err := h.authService.HashPassword(req.Password)
+        if err != nil </span><span class="cov0" title="0">{
+                h.writeError(w, http.StatusInternalServerError, "Failed to process password", err.Error())
+                return
+        }</span>
+
+        // Create user
+        <span class="cov0" title="0">createReq := &amp;auth.CreateUserRequest{
+                Username: req.Username,
+                Email:    req.Email,
+                Password: passwordHash,
+        }
+
+        user, err := h.userStore.CreateUser(r.Context(), createReq)
+        if err != nil </span><span class="cov0" title="0">{
+                h.writeError(w, http.StatusInternalServerError, "Failed to create user", err.Error())
+                return
+        }</span>
+
+        // Remove password hash from response
+        <span class="cov0" title="0">user.PasswordHash = ""
+
+        w.Header().Set("Content-Type", "application/json")
+        w.WriteHeader(http.StatusCreated)
+        json.NewEncoder(w).Encode(map[string]interface{}{
+                "message": "User created successfully",
+                "user":    user,
+        })</span>
+}
+
+// HandleLogout handles user logout
+func (h *AuthHandler) HandleLogout(w http.ResponseWriter, r *http.Request) <span class="cov0" title="0">{
+        if r.Method != http.MethodPost </span><span class="cov0" title="0">{
+                http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+                return
+        }</span>
+
+        // Get token from Authorization header
+        <span class="cov0" title="0">token := h.extractToken(r)
+        if token == "" </span><span class="cov0" title="0">{
+                h.writeError(w, http.StatusBadRequest, "No token provided", "")
+                return
+        }</span>
+
+        // Revoke the token
+        <span class="cov0" title="0">if err := h.authService.RevokeToken(r.Context(), token); err != nil </span>{<span class="cov0" title="0">
+                // Don't fail logout if token revocation fails
+                // The token will expire naturally
+        }</span>
+
+        <span class="cov0" title="0">w.Header().Set("Content-Type", "application/json")
+        json.NewEncoder(w).Encode(map[string]string{
+                "message": "Logged out successfully",
+        })</span>
+}
+
+// HandleRefreshToken handles token refresh
+func (h *AuthHandler) HandleRefreshToken(w http.ResponseWriter, r *http.Request) <span class="cov0" title="0">{
+        if r.Method != http.MethodPost </span><span class="cov0" title="0">{
+                http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+                return
+        }</span>
+
+        // Get token from Authorization header
+        <span class="cov0" title="0">oldToken := h.extractToken(r)
+        if oldToken == "" </span><span class="cov0" title="0">{
+                h.writeError(w, http.StatusBadRequest, "No token provided", "")
+                return
+        }</span>
+
+        // Refresh the token
+        <span class="cov0" title="0">ipAddress := getClientIP(r)
+        userAgent := r.Header.Get("User-Agent")
+
+        newToken, err := h.authService.RefreshToken(r.Context(), oldToken, ipAddress, userAgent)
+        if err != nil </span><span class="cov0" title="0">{
+                h.writeError(w, http.StatusUnauthorized, "Invalid or expired token", err.Error())
+                return
+        }</span>
+
+        // Calculate expiry time
+        <span class="cov0" title="0">expiresAt := time.Now().Add(24 * time.Hour)
+
+        response := map[string]interface{}{
+                "token":      newToken,
+                "expires_at": expiresAt,
+        }
+
+        w.Header().Set("Content-Type", "application/json")
+        json.NewEncoder(w).Encode(response)</span>
+}
+
+// HandleProfile returns the current user's profile
+func (h *AuthHandler) HandleProfile(w http.ResponseWriter, r *http.Request) <span class="cov0" title="0">{
+        if r.Method != http.MethodGet </span><span class="cov0" title="0">{
+                http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+                return
+        }</span>
+
+        // Get user from context (set by auth middleware)
+        <span class="cov0" title="0">user, ok := r.Context().Value("user").(*auth.Claims)
+        if !ok </span><span class="cov0" title="0">{
+                h.writeError(w, http.StatusUnauthorized, "Not authenticated", "")
+                return
+        }</span>
+
+        // Get full user details
+        <span class="cov0" title="0">fullUser, err := h.userStore.GetUserByID(r.Context(), user.UserID)
+        if err != nil </span><span class="cov0" title="0">{
+                h.writeError(w, http.StatusInternalServerError, "Failed to get user details", err.Error())
+                return
+        }</span>
+
+        // Remove password hash
+        <span class="cov0" title="0">fullUser.PasswordHash = ""
+
+        w.Header().Set("Content-Type", "application/json")
+        json.NewEncoder(w).Encode(fullUser)</span>
+}
+
+// AuthMiddleware validates JWT tokens and adds user to context
+func (h *AuthHandler) AuthMiddleware(next http.Handler) http.Handler <span class="cov0" title="0">{
+        return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) </span><span class="cov0" title="0">{
+                token := h.extractToken(r)
+                if token == "" </span><span class="cov0" title="0">{
+                        h.writeError(w, http.StatusUnauthorized, "No token provided", "")
+                        return
+                }</span>
+
+                <span class="cov0" title="0">claims, err := h.authService.ValidateToken(r.Context(), token)
+                if err != nil </span><span class="cov0" title="0">{
+                        h.writeError(w, http.StatusUnauthorized, "Invalid token", err.Error())
+                        return
+                }</span>
+
+                // Add user to context
+                <span class="cov0" title="0">ctx := context.WithValue(r.Context(), "user", claims)
+                r = r.WithContext(ctx)
+
+                next.ServeHTTP(w, r)</span>
+        })
+}
+
+// RequireAdmin middleware ensures user is an admin
+func (h *AuthHandler) RequireAdmin(next http.Handler) http.Handler <span class="cov0" title="0">{
+        return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) </span><span class="cov0" title="0">{
+                user, ok := r.Context().Value("user").(*auth.Claims)
+                if !ok </span><span class="cov0" title="0">{
+                        h.writeError(w, http.StatusUnauthorized, "Not authenticated", "")
+                        return
+                }</span>
+
+                <span class="cov0" title="0">if !user.IsAdmin </span><span class="cov0" title="0">{
+                        h.writeError(w, http.StatusForbidden, "Admin access required", "")
+                        return
+                }</span>
+
+                <span class="cov0" title="0">next.ServeHTTP(w, r)</span>
+        })
+}
+
+// extractToken extracts JWT token from Authorization header
+func (h *AuthHandler) extractToken(r *http.Request) string <span class="cov0" title="0">{
+        authHeader := r.Header.Get("Authorization")
+        if authHeader == "" </span><span class="cov0" title="0">{
+                return ""
+        }</span>
+
+        // Expected format: "Bearer &lt;token&gt;"
+        <span class="cov0" title="0">parts := strings.SplitN(authHeader, " ", 2)
+        if len(parts) != 2 || strings.ToLower(parts[0]) != "bearer" </span><span class="cov0" title="0">{
+                return ""
+        }</span>
+
+        <span class="cov0" title="0">return parts[1]</span>
+}
+
+// writeError writes a JSON error response
+func (h *AuthHandler) writeError(w http.ResponseWriter, statusCode int, message, details string) <span class="cov0" title="0">{
+        w.Header().Set("Content-Type", "application/json")
+        w.WriteHeader(statusCode)
+
+        response := ErrorResponse{
+                Error:   message,
+                Message: details,
+        }
+
+        json.NewEncoder(w).Encode(response)
+}</span>
+
+// getClientIP extracts the client IP address from the request
+func getClientIP(r *http.Request) string <span class="cov0" title="0">{
+        // Check X-Forwarded-For header
+        if xff := r.Header.Get("X-Forwarded-For"); xff != "" </span><span class="cov0" title="0">{
+                if ips := strings.Split(xff, ","); len(ips) &gt; 0 </span><span class="cov0" title="0">{
+                        return strings.TrimSpace(ips[0])
+                }</span>
+        }
+
+        // Check X-Real-IP header
+        <span class="cov0" title="0">if xri := r.Header.Get("X-Real-IP"); xri != "" </span><span class="cov0" title="0">{
+                return xri
+        }</span>
+
+        // Fall back to RemoteAddr
+        <span class="cov0" title="0">if ip := strings.Split(r.RemoteAddr, ":"); len(ip) &gt; 0 </span><span class="cov0" title="0">{
+                return ip[0]
+        }</span>
+
+        <span class="cov0" title="0">return r.RemoteAddr</span>
+}
+</pre>
+		
+		<pre class="file" id="file12" style="display: none">package rest
+
+import (
+        "asdf/internal/store"
+        "asdf/internal/types"
+        "context"
+        "encoding/json"
+        "html/template"
+        "log"
+        "net/http"
+        "path"
+        "strings"
+        "time"
+)
+
+var templatePath = path.Join("web", "template")
+
+var accountTmpl *template.Template
+var searchTmpl *template.Template
+
+func LoadTemplates() <span class="cov0" title="0">{
+        searchTmpl = template.Must(template.ParseFiles(path.Join(templatePath, "search.html")))
+        accountTmpl = template.Must(template.ParseFiles(path.Join(templatePath, "account.html")))
+}</span>
+
+type HTMLHandler struct {
+        Data  store.Store
+        Cache interface {
+                GetWebFingerRecord(ctx context.Context, subject string) (*types.JRD, error)
+                SetWebFingerRecord(ctx context.Context, subject string, jrd *types.JRD, expiry time.Duration) error
+                RecordMiss(ctx context.Context)
+        }
+}
+
+func (h *HTMLHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) <span class="cov0" title="0">{
+        switch r.Method </span>{
+        case http.MethodGet:<span class="cov0" title="0">
+                h.IndexHandler(w, r)</span>
+        case http.MethodPost:<span class="cov0" title="0">
+                h.SearchHandler(w, r)</span>
+        case http.MethodPut, http.MethodPatch, http.MethodDelete:<span class="cov0" title="0">
+                http.Error(w, "Not implemented", http.StatusNotImplemented)</span>
+        default:<span class="cov0" title="0">
+                http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)</span>
+        }
+}
+
+func (h *HTMLHandler) IndexHandler(w http.ResponseWriter, r *http.Request) <span class="cov0" title="0">{
+        err := searchTmpl.Execute(w, nil)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Printf("Template execution failed: %v", err)
+                http.Error(w, "Error rendering search form", http.StatusInternalServerError)
+        }</span>
+
+}
+
+func (h *HTMLHandler) SearchHandler(w http.ResponseWriter, r *http.Request) <span class="cov0" title="0">{
+        subject, err := getSubjectFromForm(r)
+        if err != nil || subject == "" </span><span class="cov0" title="0">{
+                http.Error(w, "Invalid subject", http.StatusBadRequest)
+                return
+        }</span>
+
+        <span class="cov0" title="0">result, err := h.Data.LookupBySubject(r.Context(), subject)
+        if err != nil </span><span class="cov0" title="0">{
+                http.Error(w, "Error during lookup", http.StatusInternalServerError)
+                return
+        }</span>
+        <span class="cov0" title="0">if result == nil </span><span class="cov0" title="0">{
+                http.Error(w, "Account not found", http.StatusNotFound)
+                return
+        }</span>
+
+        <span class="cov0" title="0">err = accountTmpl.Execute(w, result)
+        if err != nil </span><span class="cov0" title="0">{
+                http.Error(w, "Error rendering account template", http.StatusInternalServerError)
+        }</span>
+}
+
+func getSubjectFromForm(r *http.Request) (string, error) <span class="cov0" title="0">{
+        if err := r.ParseForm(); err != nil </span><span class="cov0" title="0">{
+                return "", err
+        }</span>
+        <span class="cov0" title="0">return r.FormValue("acct"), nil</span>
+}
+
+func (h *HTMLHandler) HandleSearchAPI(w http.ResponseWriter, r *http.Request) <span class="cov0" title="0">{
+        query := strings.ToLower(r.URL.Query().Get("q"))
+        if len(query) &lt; 2 </span><span class="cov0" title="0">{
+                json.NewEncoder(w).Encode(map[string][]string{"results": {}})
+                return
+        }</span>
+
+        <span class="cov0" title="0">results, err := h.Data.SearchSubjects(r.Context(), query)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Printf("SearchSubjects failed: %v", err)
+                http.Error(w, "Search failed", http.StatusInternalServerError)
+                return
+        }</span>
+
+        <span class="cov0" title="0">w.Header().Set("Content-Type", "application/json")
+        err = json.NewEncoder(w).Encode(map[string][]string{
+                "results": results,
+        })
+        if err != nil </span><span class="cov0" title="0">{
+                log.Printf("JSON encode failed: %v", err)
+        }</span>
+}
+
+func (h *HTMLHandler) HandleWebFinger(w http.ResponseWriter, r *http.Request) <span class="cov0" title="0">{
+        resource := r.URL.Query().Get("resource")
+        if resource == "" </span><span class="cov0" title="0">{
+                http.Error(w, "missing resource param", http.StatusBadRequest)
+                return
+        }</span>
+
+        <span class="cov0" title="0">var resp *types.JRD
+        var err error
+
+        // Try cache first if available
+        if h.Cache != nil </span><span class="cov0" title="0">{
+                resp, err = h.Cache.GetWebFingerRecord(r.Context(), resource)
+                if err == nil &amp;&amp; resp != nil </span><span class="cov0" title="0">{
+                        // Cache hit
+                        w.Header().Set("Content-Type", "application/jrd+json")
+                        w.Header().Set("X-Cache", "HIT")
+                        json.NewEncoder(w).Encode(resp)
+                        return
+                }</span>
+                // Cache miss - record for metrics
+                <span class="cov0" title="0">h.Cache.RecordMiss(r.Context())</span>
+        }
+
+        // Get from database
+        <span class="cov0" title="0">user, err := h.Data.LookupBySubject(r.Context(), resource)
+        if err != nil </span><span class="cov0" title="0">{
+                http.Error(w, "not found", http.StatusNotFound)
+                return
+        }</span>
+
+        <span class="cov0" title="0">resp = &amp;types.JRD{
+                Subject:    user.Subject,
+                Aliases:    user.Aliases,
+                Properties: user.Properties,
+                Links:      user.Links,
+        }
+
+        // Store in cache if available
+        if h.Cache != nil </span><span class="cov0" title="0">{
+                // Cache for 5 minutes
+                _ = h.Cache.SetWebFingerRecord(r.Context(), resource, resp, 5*time.Minute)
+        }</span>
+
+        <span class="cov0" title="0">w.Header().Set("Content-Type", "application/jrd+json")
+        w.Header().Set("X-Cache", "MISS")
+        json.NewEncoder(w).Encode(resp)</span>
+}
+</pre>
+		
+		<pre class="file" id="file13" style="display: none">package rest
+
+import (
+        "crypto/rand"
+        "encoding/base64"
+        "fmt"
+        "net/http"
+        "text/template"
+        "time"
+
+        "github.com/golang-jwt/jwt"
+)
+
+func generateSecretKey(length int) (string, error) <span class="cov0" title="0">{
+        bytes := make([]byte, length)
+        _, err := rand.Read(bytes)
+        if err != nil </span><span class="cov0" title="0">{
+                return "", err
+        }</span>
+        <span class="cov0" title="0">return base64.URLEncoding.EncodeToString(bytes), nil</span>
+}
+
+func LoginPage(w http.ResponseWriter, r *http.Request) <span class="cov0" title="0">{
+        if r.Method == http.MethodPost </span><span class="cov0" title="0">{
+                username := r.FormValue("username")
+                password := r.FormValue("password")
+
+                if username == "admin" &amp;&amp; password == "admin" </span><span class="cov0" title="0">{
+                        token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+                                "nbf": time.Now().Unix(),
+                        })
+
+                        hmacSampleSecret, err := generateSecretKey(32)
+                        if err != nil </span><span class="cov0" title="0">{
+                                http.Error(w, err.Error(), http.StatusInternalServerError)
+                                return
+                        }</span>
+                        <span class="cov0" title="0">_, err = token.SignedString(hmacSampleSecret)
+                        if err != nil </span><span class="cov0" title="0">{
+                                http.Error(w, err.Error(), http.StatusInternalServerError)
+                                return
+                        }</span>
+                        <span class="cov0" title="0">http.Redirect(w, r, "/", http.StatusSeeOther)</span>
+                }
+                <span class="cov0" title="0">fmt.Fprintf(w, "Invalid credentials. Please try again.")
+                return</span>
+        }
+
+        // If not a POST request, serve the login page template.
+        <span class="cov0" title="0">tmpl, err := template.ParseFiles("templates/login.html")
+        if err != nil </span><span class="cov0" title="0">{
+                http.Error(w, err.Error(), http.StatusInternalServerError)
+                return
+        }</span>
+        <span class="cov0" title="0">tmpl.Execute(w, nil)</span>
+}
+</pre>
+		
+		<pre class="file" id="file14" style="display: none">package rest
+
+import (
+        "asdf/internal/resource"
+        "asdf/internal/store"
+        "asdf/internal/types"
+        "bytes"
+        "encoding/json"
+        "log"
+        "net/http"
+)
+
+const (
+        ContentType    = "Content-Type"
+        ContentTypeJRD = "application/jrd+json"
+)
+
+type WebFingerHandler struct {
+        Data store.Store
+}
+
+func (wfh *WebFingerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+        acct, err := resource.ParseResource(r)
+        if err != nil </span><span class="cov8" title="1">{
+                http.Error(w, err.Error(), http.StatusBadRequest)
+                return
+        }</span>
+
+        <span class="cov0" title="0">jrd, err := wfh.Data.LookupBySubject(r.Context(), acct)
+        if err != nil </span><span class="cov0" title="0">{
+                http.Error(w, "not found", http.StatusNotFound)
+                return
+        }</span>
+
+        <span class="cov0" title="0">writeResponse(w, jrd)</span>
+}
+
+func writeResponse(w http.ResponseWriter, content *types.JRD) <span class="cov0" title="0">{
+        w.Header().Set(ContentType, ContentTypeJRD)
+
+        var buf bytes.Buffer
+        if err := json.NewEncoder(&amp;buf).Encode(content); err != nil </span><span class="cov0" title="0">{
+                log.Printf("Error writing body: %v", err)
+                http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+                return
+        }</span>
+
+        <span class="cov0" title="0">w.WriteHeader(http.StatusOK)
+        if _, err := buf.WriteTo(w); err != nil </span><span class="cov0" title="0">{
+                log.Printf("Error writing body: %v", err)
+                http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+        }</span>
+}
+</pre>
+		
+		<pre class="file" id="file15" style="display: none">package server
+
+import (
+        "asdf/internal/auth"
+        "asdf/internal/cache"
+        "asdf/internal/config"
+        "asdf/internal/middleware"
+        "asdf/internal/migrations"
+        "asdf/internal/monitoring"
+        "asdf/internal/rest"
+        "asdf/internal/store"
+        "context"
+        "fmt"
+        "log"
+        "net/http"
+        "time"
+
+        "github.com/jackc/pgx/v5/pgxpool"
+)
+
+const wellKnownWebFinger = "/.well-known/webfinger"
+
+func init() <span class="cov0" title="0">{
+        log.SetFlags(log.LstdFlags | log.Lshortfile)
+}</span>
+
+// Start initializes and starts the server with all features
+func Start() error <span class="cov0" title="0">{
+        // Load configuration
+        cfg, err := config.Load()
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to load config: %w", err)
+        }</span>
+
+        // Initialize monitoring
+        <span class="cov0" title="0">metrics := monitoring.NewMetrics()
+        if err := metrics.SetLogLevel(cfg.Logging.Level); err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to set log level: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">logger := metrics.Logger()
+        logger.Info("Starting ASDF WebFinger Server")
+
+        // Connect to database
+        pool, err := pgxpool.New(context.Background(), cfg.Database.URL)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to connect to database: %w", err)
+        }</span>
+        <span class="cov0" title="0">defer pool.Close()
+
+        // Run migrations
+        migrator, err := migrations.NewMigrator(cfg.Database.URL)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to create migrator: %w", err)
+        }</span>
+        <span class="cov0" title="0">defer migrator.Close()
+
+        if !cfg.IsProductionEnv() </span><span class="cov0" title="0">{
+                logger.Info("Running database migrations")
+                if err := migrator.Up(); err != nil </span><span class="cov0" title="0">{
+                        return fmt.Errorf("failed to run migrations: %w", err)
+                }</span>
+        }
+
+        // Initialize cache
+        <span class="cov0" title="0">redisCache, err := cache.NewRedisCache(cfg.Redis.URL, cfg.Redis.Password, cfg.Redis.DB)
+        if err != nil </span><span class="cov0" title="0">{
+                logger.Warnf("Failed to connect to Redis: %v. Continuing without cache.", err)
+                redisCache = nil
+        }</span>
+        <span class="cov0" title="0">if redisCache != nil </span><span class="cov0" title="0">{
+                defer redisCache.Close()
+                logger.Info("Redis cache connected")
+        }</span>
+
+        // Initialize stores
+        <span class="cov0" title="0">webfingerStore := store.NewPostgresStore(pool)
+        userStore := auth.NewPostgresUserStore(pool)
+        sessionStore := auth.NewPostgresSessionStore(pool)
+
+        // Initialize authentication service
+        tokenExpiry := time.Duration(cfg.Auth.TokenExpiryHours) * time.Hour
+        authService := auth.NewAuthService(cfg.Auth.JWTSecret, tokenExpiry, sessionStore)
+
+        // Initialize handlers
+        rest.LoadTemplates()
+        htmlHandler := &amp;rest.HTMLHandler{Data: webfingerStore, Cache: redisCache}
+        authHandler := rest.NewAuthHandler(authService, userStore)
+
+        // Setup middleware
+        rateLimiter := middleware.NewRateLimiter(cfg.Security.RateLimitRPS, cfg.Security.RateLimitBurst)
+
+        // Create main router
+        mux := http.NewServeMux()
+
+        // Health check (no auth required)
+        mux.HandleFunc("/health", metrics.HealthCheckHandler())
+
+        // Metrics endpoint (no auth required in development)
+        mux.Handle("/metrics", metrics.Handler())
+
+        // Static assets
+        mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("web/static"))))
+
+        // Authentication endpoints
+        mux.HandleFunc("/api/auth/login", authHandler.HandleLogin)
+        mux.HandleFunc("/api/auth/register", authHandler.HandleRegister)
+        mux.HandleFunc("/api/auth/logout", authHandler.HandleLogout)
+        mux.HandleFunc("/api/auth/refresh", authHandler.HandleRefreshToken)
+
+        // Protected API endpoints
+        protectedMux := http.NewServeMux()
+        protectedMux.HandleFunc("/api/profile", authHandler.HandleProfile)
+        protectedMux.HandleFunc("/api/search", htmlHandler.HandleSearchAPI)
+
+        // Admin endpoints (TODO: Add admin endpoints when needed)
+
+        // WebFinger endpoint (public)
+        mux.HandleFunc(wellKnownWebFinger, htmlHandler.HandleWebFinger)
+
+        // HTML frontend
+        mux.Handle("/", htmlHandler)
+
+        // Apply middleware chain
+        var handler http.Handler = mux
+
+        // Add middleware layers (applied in reverse order)
+        handler = middleware.Timeout(30 * time.Second)(handler)
+        handler = middleware.Logging(logger.Infof)(handler)
+        handler = metrics.HTTPMetricsMiddleware(handler)
+        handler = middleware.SecurityHeaders(cfg.Security.EnableCSP, cfg.Security.EnableHSTS)(handler)
+        handler = middleware.CORS(cfg.Security.AllowedOrigins, true)(handler)
+        handler = middleware.TrustedProxies(cfg.Security.TrustedProxies)(handler)
+        handler = rateLimiter.RateLimit(handler)
+
+        if cfg.Security.ForceHTTPS &amp;&amp; cfg.IsProductionEnv() </span><span class="cov0" title="0">{
+                handler = middleware.HTTPSRedirect(true)(handler)
+        }</span>
+
+        // Start background tasks
+        <span class="cov0" title="0">ctx := context.Background()
+        metrics.StartBackgroundTasks(ctx)
+
+        // Start server
+        addr := fmt.Sprintf("%s:%s", cfg.Server.Host, cfg.Server.Port)
+
+        // Seed test data in development/test mode
+        if cfg.IsTestEnv() || cfg.IsDevelopmentEnv() </span><span class="cov0" title="0">{
+                if err := seedTestData(ctx, webfingerStore); err != nil </span><span class="cov0" title="0">{
+                        logger.Warnf("Failed to seed test data: %v", err)
+                }</span>
+        }
+
+        <span class="cov0" title="0">return runServer(handler, addr, cfg, logger)</span>
+}
+
+func runServer(handler http.Handler, addr string, cfg *config.Config, logger interface{ Infof(string, ...interface{}) }) error <span class="cov0" title="0">{
+        server := &amp;http.Server{
+                Addr:         addr,
+                Handler:      handler,
+                ReadTimeout:  15 * time.Second,
+                WriteTimeout: 15 * time.Second,
+                IdleTimeout:  60 * time.Second,
+        }
+
+        if cfg.IsTestEnv() || cfg.IsDevelopmentEnv() </span><span class="cov0" title="0">{
+                logger.Infof("Starting HTTP server on %s (development mode)", addr)
+                return server.ListenAndServe()
+        }</span> else<span class="cov0" title="0"> {
+                logger.Infof("Starting HTTPS server on %s (production mode)", addr)
+                return server.ListenAndServeTLS(cfg.Server.CertPath, cfg.Server.KeyPath)
+        }</span>
+}
+
+// seedTestData creates test data for development and testing
+func seedTestData(ctx context.Context, store *store.PostgresStore) error <span class="cov0" title="0">{
+        // This replaces the old InitSchemaAndSeed method
+        // Check if example user already exists
+        _, err := store.LookupBySubject(ctx, "acct:example@example.com")
+        if err == nil </span><span class="cov0" title="0">{
+                // User already exists
+                return nil
+        }</span>
+
+        // Create example user using the new schema
+        // This would need to be implemented in the store
+        <span class="cov0" title="0">return nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file16" style="display: none">package store
+
+import (
+        "asdf/internal/resource"
+        "asdf/internal/types"
+        "encoding/json"
+        "errors"
+        "log"
+        "os"
+)
+
+type Data struct {
+        data []types.JRD
+}
+
+func NewData() *Data <span class="cov0" title="0">{
+        return &amp;Data{}
+}</span>
+
+func (app *Data) LoadData(fileName string) error <span class="cov0" title="0">{
+        dir, _ := os.Getwd()
+        file, err := os.Open(fileName)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Printf("Error opening file: %s", err.Error()+dir)
+                return errors.New("Error loading file")
+        }</span>
+        <span class="cov0" title="0">defer file.Close()
+
+        decoder := json.NewDecoder(file)
+        if err := decoder.Decode(&amp;app.data); err != nil </span><span class="cov0" title="0">{
+                log.Printf("Error decoding JSON: %v", err)
+                return errors.New("Error decoding JSON")
+        }</span>
+        <span class="cov0" title="0">return nil</span>
+}
+
+func (app *Data) LookupResource(subject string) (*types.JRD, error) <span class="cov0" title="0">{
+        for _, jrd := range app.data </span><span class="cov0" title="0">{
+                acct, err := resource.GetSubject(jrd.Subject)
+                if err != nil </span><span class="cov0" title="0">{
+                        return nil, err
+                }</span>
+                <span class="cov0" title="0">if acct == subject </span><span class="cov0" title="0">{
+                        return &amp;jrd, nil
+                }</span>
+        }
+        <span class="cov0" title="0">return nil, nil</span>
+}
+
+func (app *Data) SaveData(fileName string) error <span class="cov0" title="0">{
+        file, err := os.Create(fileName)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Printf("Error creating file: %v", err)
+                return errors.New("Error creating file")
+        }</span>
+        <span class="cov0" title="0">defer file.Close()
+
+        encoder := json.NewEncoder(file)
+        if err := encoder.Encode(app.data); err != nil </span><span class="cov0" title="0">{
+                log.Printf("Error encoding JSON: %v", err)
+                return errors.New("Error encoding JSON")
+        }</span>
+        <span class="cov0" title="0">return nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file17" style="display: none">package store
+
+import (
+        "asdf/internal/types"
+        "context"
+)
+
+type MockStore struct {
+        Records map[string]*types.JRD
+}
+
+func NewMockStore() *MockStore <span class="cov0" title="0">{
+        return &amp;MockStore{
+                Records: map[string]*types.JRD{},
+        }
+}</span>
+
+func (m *MockStore) Add(jrd *types.JRD) <span class="cov0" title="0">{
+        m.Records[jrd.Subject] = jrd
+}</span>
+
+func (m *MockStore) LookupBySubject(_ context.Context, subject string) (*types.JRD, error) <span class="cov0" title="0">{
+        if val, ok := m.Records[subject]; ok </span><span class="cov0" title="0">{
+                return val, nil
+        }</span>
+        <span class="cov0" title="0">return nil, nil</span>
+}
+
+func (m *MockStore) SearchSubjects(_ context.Context, query string) ([]string, error) <span class="cov0" title="0">{
+        var results []string
+        for subject := range m.Records </span><span class="cov0" title="0">{
+                if query == "" || subject == query </span><span class="cov0" title="0">{
+                        results = append(results, subject)
+                }</span>
+        }
+        <span class="cov0" title="0">return results, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file18" style="display: none">package store
+
+import (
+        "asdf/internal/types"
+        "context"
+        "encoding/json"
+
+        "github.com/jackc/pgx/v5/pgxpool"
+)
+
+type Store interface {
+        LookupBySubject(ctx context.Context, subject string) (*types.JRD, error)
+        SearchSubjects(ctx context.Context, query string) ([]string, error)
+}
+
+type PostgresStore struct {
+        db *pgxpool.Pool
+}
+
+func NewPostgresStore(db *pgxpool.Pool) *PostgresStore <span class="cov0" title="0">{
+        return &amp;PostgresStore{db: db}
+}</span>
+
+func (ps *PostgresStore) LookupBySubject(ctx context.Context, subject string) (*types.JRD, error) <span class="cov0" title="0">{
+        const q = `
+        SELECT subject, aliases, properties, links
+        FROM users
+        WHERE subject = $1
+        `
+
+        row := ps.db.QueryRow(ctx, q, subject)
+
+        var aliases []string
+        var propsJSON, linksJSON []byte
+        var returnedSubject string
+
+        if err := row.Scan(&amp;returnedSubject, &amp;aliases, &amp;propsJSON, &amp;linksJSON); err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov0" title="0">var properties map[string]interface{}
+        if err := json.Unmarshal(propsJSON, &amp;properties); err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov0" title="0">var links []types.Link
+        if err := json.Unmarshal(linksJSON, &amp;links); err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov0" title="0">return &amp;types.JRD{
+                Subject:    returnedSubject,
+                Aliases:    aliases,
+                Properties: properties,
+                Links:      links,
+        }, nil</span>
+}
+
+func (ps *PostgresStore) InitSchemaAndSeed(ctx context.Context) error <span class="cov0" title="0">{
+        const schema = `
+CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        username TEXT UNIQUE NOT NULL,
+        domain TEXT NOT NULL,
+        subject TEXT UNIQUE NOT NULL,
+        aliases TEXT[],
+        properties JSONB,
+        links JSONB NOT NULL
+);`
+
+        _, err := ps.db.Exec(ctx, schema)
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        // Optional seed
+        <span class="cov0" title="0">const check = `SELECT COUNT(*) FROM users WHERE subject = $1`
+        var count int
+        err = ps.db.QueryRow(ctx, check, "acct:example@example.com").Scan(&amp;count)
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        <span class="cov0" title="0">if count == 0 </span><span class="cov0" title="0">{
+                const seed = `
+INSERT INTO users (username, domain, subject, aliases, properties, links)
+VALUES ($1, $2, $3, $4, $5, $6);`
+
+                aliases := []string{"http://example.com/profile/example"}
+                properties := `{"http://example.com/prop/name": "Example User"}`
+                links := `[{"rel":"http://webfinger.net/rel/profile-page","type":"text/html","href":"http://example.com/profile/example"},
+                           {"rel":"http://example.com/rel/blog","type":"text/html","href":"http://blogs.example.com/example/"}]`
+
+                _, err = ps.db.Exec(ctx, seed,
+                        "example",
+                        "example.com",
+                        "acct:example@example.com",
+                        aliases,
+                        []byte(properties),
+                        []byte(links),
+                )
+                if err != nil </span><span class="cov0" title="0">{
+                        return err
+                }</span>
+        }
+
+        <span class="cov0" title="0">return nil</span>
+}
+
+func (ps *PostgresStore) SearchSubjects(ctx context.Context, query string) ([]string, error) <span class="cov0" title="0">{
+        rows, err := ps.db.Query(ctx, `
+                SELECT subject
+                FROM users
+                WHERE LOWER(subject) LIKE '%' || $1 || '%'
+                ORDER BY subject ASC
+                LIMIT 25
+        `, query)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">defer rows.Close()
+
+        var results []string
+        for rows.Next() </span><span class="cov0" title="0">{
+                var subject string
+                if err := rows.Scan(&amp;subject); err == nil </span><span class="cov0" title="0">{
+                        results = append(results, subject)
+                }</span>
+        }
+        <span class="cov0" title="0">return results, nil</span>
+}
+</pre>
+		
+		</div>
+	</body>
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+</html>

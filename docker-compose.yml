@@ -5,10 +5,25 @@ services:
     volumes:
       - asdf-data:/data
       - asdf-data:/certs
+      - ./config.yaml:/app/config.yaml
     ports:
-      - "${PORT}:${PORT}"
+      - "${PORT:-8080}:${PORT:-8080}"
+      - "9090:9090"  # Prometheus metrics
     env_file:
       - .env
+    depends_on:
+      - db
+      - redis
+    environment:
+      - ASDF_DATABASE_URL=postgres://webfinger:secret@db:5432/webfinger?sslmode=disable
+      - ASDF_REDIS_URL=redis://redis:6379
+      - ASDF_SERVER_ENV=development
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${PORT:-8080}/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+  
   db:
     image: postgres:16
     environment:
@@ -19,7 +34,53 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+      - ./internal/migrations/sql:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U webfinger"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # Optional: Prometheus for metrics collection
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9091:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+
+  # Optional: Grafana for metrics visualization
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana-data:/var/lib/grafana
 
 volumes:
   pgdata:
   asdf-data:
+  redis-data:
+  prometheus-data:
+  grafana-data:

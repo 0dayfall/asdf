@@ -3,12 +3,14 @@ package rest
 import (
 	"asdf/internal/store"
 	"asdf/internal/types"
+	"context"
 	"encoding/json"
 	"html/template"
 	"log"
 	"net/http"
 	"path"
 	"strings"
+	"time"
 )
 
 var templatePath = path.Join("web", "template")
@@ -22,7 +24,12 @@ func LoadTemplates() {
 }
 
 type HTMLHandler struct {
-	Data store.Store
+	Data  store.Store
+	Cache interface {
+		GetWebFingerRecord(ctx context.Context, subject string) (*types.JRD, error)
+		SetWebFingerRecord(ctx context.Context, subject string, jrd *types.JRD, expiry time.Duration) error
+		RecordMiss(ctx context.Context)
+	}
 }
 
 func (h *HTMLHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -107,19 +114,44 @@ func (h *HTMLHandler) HandleWebFinger(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var resp *types.JRD
+	var err error
+
+	// Try cache first if available
+	if h.Cache != nil {
+		resp, err = h.Cache.GetWebFingerRecord(r.Context(), resource)
+		if err == nil && resp != nil {
+			// Cache hit
+			w.Header().Set("Content-Type", "application/jrd+json")
+			w.Header().Set("X-Cache", "HIT")
+			json.NewEncoder(w).Encode(resp)
+			return
+		}
+		// Cache miss - record for metrics
+		h.Cache.RecordMiss(r.Context())
+	}
+
+	// Get from database
 	user, err := h.Data.LookupBySubject(r.Context(), resource)
 	if err != nil {
 		http.Error(w, "not found", http.StatusNotFound)
 		return
 	}
 
-	resp := types.JRD{
+	resp = &types.JRD{
 		Subject:    user.Subject,
 		Aliases:    user.Aliases,
 		Properties: user.Properties,
 		Links:      user.Links,
 	}
 
+	// Store in cache if available
+	if h.Cache != nil {
+		// Cache for 5 minutes
+		_ = h.Cache.SetWebFingerRecord(r.Context(), resource, resp, 5*time.Minute)
+	}
+
 	w.Header().Set("Content-Type", "application/jrd+json")
+	w.Header().Set("X-Cache", "MISS")
 	json.NewEncoder(w).Encode(resp)
 }

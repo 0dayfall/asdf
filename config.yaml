@@ -1,0 +1,36 @@
+# ASDF WebFinger Server Configuration
+server:
+  port: "8080"
+  host: "0.0.0.0"
+  cert_path: "/certs/server.crt"
+  key_path: "/certs/server.key"
+  env: "production"
+
+database:
+  url: "postgres://webfinger:secret@localhost:5432/webfinger?sslmode=disable"
+  max_open_conns: 25
+  max_idle_conns: 5
+
+redis:
+  url: "redis://localhost:6379"
+  password: ""
+  db: 0
+
+auth:
+  jwt_secret: "${JWT_SECRET}"
+  session_secret: "${SESSION_SECRET}"
+  token_expiry_hours: 24
+
+security:
+  rate_limit_rps: 10
+  rate_limit_burst: 20
+  allowed_origins: ["*"]
+  trusted_proxies: ["127.0.0.1", "::1"]
+  enable_csp: true
+  enable_hsts: true
+  force_https: true
+
+logging:
+  level: "info"
+  format: "json"
+  output: "stdout"
