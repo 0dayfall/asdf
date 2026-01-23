@@ -1,7 +1,7 @@
 package rest
 
 import (
-	"asdf/internal/store"
+	"github.com/0dayfall/webfinger-server/internal/store"
 	"net/http"
 	"net/http/httptest"
 	"testing"

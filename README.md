@@ -1,12 +1,40 @@
-# ASDF WebFinger Server
+# webfinger-server
 
-[![Go](https://github.com/0dayfall/asdf/actions/workflows/go.yml/badge.svg)](https://github.com/0dayfall/asdf/actions/workflows/go.yml)
-[![GoDoc](https://godoc.org/github.com/0dayfall/asdf?status.png)](https://godoc.org/github.com/0dayfall/asdf)
-[![license](http://img.shields.io/badge/license-GNU3-red.svg?)](https://raw.githubusercontent.com/0dayfall/asdf/LICENSE)
+A minimal, spec-compliant WebFinger server for account and service discovery.
+
+Implements RFC 7033 for WebFinger discovery, designed to be small, auditable, and easy to deploy.
+
+> ℹ️ This project was previously named `asdf`. The name was changed to better reflect its purpose.
+
+[![Go](https://github.com/0dayfall/webfinger-server/actions/workflows/go.yml/badge.svg)](https://github.com/0dayfall/webfinger-server/actions/workflows/go.yml)
+[![GoDoc](https://godoc.org/github.com/0dayfall/webfinger-server?status.png)](https://godoc.org/github.com/0dayfall/webfinger-server)
+[![license](http://img.shields.io/badge/license-GNU3-red.svg?)](https://raw.githubusercontent.com/0dayfall/webfinger-server/LICENSE)
+
+## Quick curl example
+
+```bash
+curl "http://localhost:8080/.well-known/webfinger?resource=acct:alice@example.com"
+```
+
+```json
+{
+  "subject": "acct:alice@example.com",
+  "aliases": [
+    "https://example.com/users/alice"
+  ],
+  "links": [
+    {
+      "rel": "http://webfinger.net/rel/profile-page",
+      "type": "text/html",
+      "href": "https://example.com/@alice"
+    }
+  ]
+}
+```
 
 ## Description
 
-A comprehensive WebFinger server implementation following [RFC7033](https://datatracker.ietf.org/doc/html/rfc7033), featuring user management, authentication, caching, monitoring, and administrative capabilities.
+A WebFinger server implementation following [RFC7033](https://datatracker.ietf.org/doc/html/rfc7033), with optional user management, authentication, caching, monitoring, and administrative capabilities.
 
 ## Features
 
@@ -60,8 +88,8 @@ A comprehensive WebFinger server implementation following [RFC7033](https://data
 
 1. **Clone and setup:**
    ```bash
-   git clone https://github.com/0dayfall/asdf.git
-   cd asdf
+   git clone https://github.com/0dayfall/webfinger-server.git
+   cd webfinger-server
    cp .env.example .env
    ```
 
@@ -75,8 +103,8 @@ A comprehensive WebFinger server implementation following [RFC7033](https://data
 3. **Generate secrets:**
    ```bash
    # Generate JWT and session secrets
-   echo "ASDF_AUTH_JWT_SECRET=$(openssl rand -base64 32)" >> .env
-   echo "ASDF_AUTH_SESSION_SECRET=$(openssl rand -base64 32)" >> .env
+   echo "WEBFINGER_AUTH_JWT_SECRET=$(openssl rand -base64 32)" >> .env
+   echo "WEBFINGER_AUTH_SESSION_SECRET=$(openssl rand -base64 32)" >> .env
    ```
 
 4. **Start services:**
@@ -94,14 +122,14 @@ A comprehensive WebFinger server implementation following [RFC7033](https://data
 2. **Build and run:**
    ```bash
    go mod download
-   go build -o asdf ./cmd/asdf
-   ./asdf
+   go build -o webfinger-server ./cmd/webfinger-server
+   ./webfinger-server
    ```
 
 ## Configuration
 
 Configuration can be provided via:
-- Environment variables (prefixed with `ASDF_`)
+- Environment variables (prefixed with `WEBFINGER_`)
 - YAML configuration file (`config.yaml`)
 - Command line arguments
 
@@ -186,9 +214,9 @@ go run cmd/migrate/main.go create add_new_feature
 
 ### Environment Modes
 
-- **Development** (`GO_ENV=development`): HTTP server, auto-migrations, seed data
-- **Test** (`GO_ENV=test`): In-memory database, HTTP server, auto-cleanup
-- **Production** (`GO_ENV=production`): HTTPS server, manual migrations, security headers
+- **Development** (`WEBFINGER_SERVER_ENV=development`): HTTP server, auto-migrations, seed data
+- **Test** (`WEBFINGER_SERVER_ENV=test`): In-memory database, HTTP server, auto-cleanup
+- **Production** (`WEBFINGER_SERVER_ENV=production`): HTTPS server, manual migrations, security headers
 
 ## Monitoring
 

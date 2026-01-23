@@ -1,7 +1,7 @@
 package main
 
 import (
-	"asdf/internal/server"
+	"github.com/0dayfall/webfinger-server/internal/server"
 	"log"
 )
 

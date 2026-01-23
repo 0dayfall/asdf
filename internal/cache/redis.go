@@ -1,7 +1,7 @@
 package cache
 
 import (
-	"asdf/internal/types"
+	"github.com/0dayfall/webfinger-server/internal/types"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -59,7 +59,7 @@ func NewRedisCache(redisURL, password string, db int) (*RedisCache, error) {
 
 	return &RedisCache{
 		client: client,
-		prefix: "asdf:webfinger:",
+		prefix: "webfinger:",
 	}, nil
 }
 

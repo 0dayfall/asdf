@@ -1,8 +1,8 @@
 package store
 
 import (
-	"asdf/internal/resource"
-	"asdf/internal/types"
+	"github.com/0dayfall/webfinger-server/internal/resource"
+	"github.com/0dayfall/webfinger-server/internal/types"
 	"encoding/json"
 	"errors"
 	"log"

@@ -10,7 +10,7 @@ import (
 
 func TestEmailResource(t *testing.T) {
 	// Arrange
-	resource := "adsf@example.com"
+	resource := "alice@example.com"
 	correctURL := "https://example.com/.well-known/webfinger?resource=acct:" + resource
 	parsedURL, _ := url.Parse(correctURL)
 	httpRequest := http.Request{URL: parsedURL}
@@ -20,12 +20,12 @@ func TestEmailResource(t *testing.T) {
 
 	//Evaluate
 	require.NoError(t, err)
-	require.Equal(t, "adsf@example.com", resource)
+	require.Equal(t, "alice@example.com", resource)
 }
 
 func TestXResource(t *testing.T) {
 	// Arrange
-	resource := "@asdf"
+	resource := "@alice"
 	correctURL := "https://example.com/.well-known/webfinger?resource=acct:" + resource
 	parsedURL, _ := url.Parse(correctURL)
 	httpRequest := http.Request{URL: parsedURL}
@@ -35,5 +35,5 @@ func TestXResource(t *testing.T) {
 
 	//Evaluate
 	require.NoError(t, err)
-	require.Equal(t, "@asdf", resource)
+	require.Equal(t, "@alice", resource)
 }

@@ -1,7 +1,7 @@
 package rest
 
 import (
-	"asdf/internal/auth"
+	"github.com/0dayfall/webfinger-server/internal/auth"
 	"context"
 	"encoding/json"
 	"net/http"

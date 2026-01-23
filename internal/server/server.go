@@ -1,14 +1,14 @@
 package server
 
 import (
-	"asdf/internal/auth"
-	"asdf/internal/cache"
-	"asdf/internal/config"
-	"asdf/internal/middleware"
-	"asdf/internal/migrations"
-	"asdf/internal/monitoring"
-	"asdf/internal/rest"
-	"asdf/internal/store"
+	"github.com/0dayfall/webfinger-server/internal/auth"
+	"github.com/0dayfall/webfinger-server/internal/cache"
+	"github.com/0dayfall/webfinger-server/internal/config"
+	"github.com/0dayfall/webfinger-server/internal/middleware"
+	"github.com/0dayfall/webfinger-server/internal/migrations"
+	"github.com/0dayfall/webfinger-server/internal/monitoring"
+	"github.com/0dayfall/webfinger-server/internal/rest"
+	"github.com/0dayfall/webfinger-server/internal/store"
 	"context"
 	"fmt"
 	"log"
@@ -39,7 +39,7 @@ func Start() error {
 	}
 
 	logger := metrics.Logger()
-	logger.Info("Starting ASDF WebFinger Server")
+	logger.Info("Starting WebFinger Server")
 
 	// Connect to database
 	pool, err := pgxpool.New(context.Background(), cfg.Database.URL)

@@ -3,7 +3,7 @@
 <html>
 	<head>
 		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-		<title>asdf: Go Coverage Report</title>
+		<title>webfinger-server: Go Coverage Report</title>
 		<style>
 			body {
 				background: black;
@@ -55,43 +55,43 @@
 			<div id="nav">
 				<select id="files">
 				
-				<option value="file0">asdf/cmd/asdf/main.go (0.0%)</option>
+				<option value="file0">github.com/0dayfall/webfinger-server/cmd/webfinger-server/main.go (0.0%)</option>
 				
-				<option value="file1">asdf/internal/admin/admin_handler.go (0.0%)</option>
+				<option value="file1">github.com/0dayfall/webfinger-server/internal/admin/admin_handler.go (0.0%)</option>
 				
-				<option value="file2">asdf/internal/auth/auth.go (0.0%)</option>
+				<option value="file2">github.com/0dayfall/webfinger-server/internal/auth/auth.go (0.0%)</option>
 				
-				<option value="file3">asdf/internal/auth/session_store.go (0.0%)</option>
+				<option value="file3">github.com/0dayfall/webfinger-server/internal/auth/session_store.go (0.0%)</option>
 				
-				<option value="file4">asdf/internal/auth/user_store.go (0.0%)</option>
+				<option value="file4">github.com/0dayfall/webfinger-server/internal/auth/user_store.go (0.0%)</option>
 				
-				<option value="file5">asdf/internal/cache/redis.go (0.0%)</option>
+				<option value="file5">github.com/0dayfall/webfinger-server/internal/cache/redis.go (0.0%)</option>
 				
-				<option value="file6">asdf/internal/config/config.go (0.0%)</option>
+				<option value="file6">github.com/0dayfall/webfinger-server/internal/config/config.go (0.0%)</option>
 				
-				<option value="file7">asdf/internal/middleware/security.go (0.0%)</option>
+				<option value="file7">github.com/0dayfall/webfinger-server/internal/middleware/security.go (0.0%)</option>
 				
-				<option value="file8">asdf/internal/migrations/migrator.go (0.0%)</option>
+				<option value="file8">github.com/0dayfall/webfinger-server/internal/migrations/migrator.go (0.0%)</option>
 				
-				<option value="file9">asdf/internal/monitoring/metrics.go (0.0%)</option>
+				<option value="file9">github.com/0dayfall/webfinger-server/internal/monitoring/metrics.go (0.0%)</option>
 				
-				<option value="file10">asdf/internal/resource/resource.go (75.0%)</option>
+				<option value="file10">github.com/0dayfall/webfinger-server/internal/resource/resource.go (75.0%)</option>
 				
-				<option value="file11">asdf/internal/rest/auth_handler.go (0.0%)</option>
+				<option value="file11">github.com/0dayfall/webfinger-server/internal/rest/auth_handler.go (0.0%)</option>
 				
-				<option value="file12">asdf/internal/rest/html_handler.go (0.0%)</option>
+				<option value="file12">github.com/0dayfall/webfinger-server/internal/rest/html_handler.go (0.0%)</option>
 				
-				<option value="file13">asdf/internal/rest/login.go (0.0%)</option>
+				<option value="file13">github.com/0dayfall/webfinger-server/internal/rest/login.go (0.0%)</option>
 				
-				<option value="file14">asdf/internal/rest/webfinger.go (21.1%)</option>
+				<option value="file14">github.com/0dayfall/webfinger-server/internal/rest/webfinger.go (21.1%)</option>
 				
-				<option value="file15">asdf/internal/server/server.go (0.0%)</option>
+				<option value="file15">github.com/0dayfall/webfinger-server/internal/server/server.go (0.0%)</option>
 				
-				<option value="file16">asdf/internal/store/file.go (0.0%)</option>
+				<option value="file16">github.com/0dayfall/webfinger-server/internal/store/file.go (0.0%)</option>
 				
-				<option value="file17">asdf/internal/store/mock.go (0.0%)</option>
+				<option value="file17">github.com/0dayfall/webfinger-server/internal/store/mock.go (0.0%)</option>
 				
-				<option value="file18">asdf/internal/store/store.go (0.0%)</option>
+				<option value="file18">github.com/0dayfall/webfinger-server/internal/store/store.go (0.0%)</option>
 				
 				</select>
 			</div>
@@ -108,7 +108,7 @@
 		<pre class="file" id="file0" style="display: none">package main
 
 import (
-        "asdf/internal/server"
+        "github.com/0dayfall/webfinger-server/internal/server"
         "log"
 )
 
@@ -122,9 +122,9 @@ func main() <span class="cov0" title="0">{
 		<pre class="file" id="file1" style="display: none">package admin
 
 import (
-        "asdf/internal/auth"
-        "asdf/internal/monitoring"
-        "asdf/internal/store"
+        "github.com/0dayfall/webfinger-server/internal/auth"
+        "github.com/0dayfall/webfinger-server/internal/monitoring"
+        "github.com/0dayfall/webfinger-server/internal/store"
         "encoding/json"
         "net/http"
         "strconv"
@@ -521,7 +521,7 @@ func (a *AuthService) GenerateToken(ctx context.Context, user *User, ipAddress, 
                         ExpiresAt: jwt.NewNumericDate(expiresAt),
                         IssuedAt:  jwt.NewNumericDate(now),
                         NotBefore: jwt.NewNumericDate(now),
-                        Issuer:    "asdf-webfinger",
+                        Issuer:    "webfinger-server",
                         Subject:   fmt.Sprintf("user:%d", user.ID),
                         ID:        uuid.New().String(),
                 },
@@ -1258,7 +1258,7 @@ func (s *PostgresUserStore) VerifyEmail(ctx context.Context, email string) error
 		<pre class="file" id="file5" style="display: none">package cache
 
 import (
-        "asdf/internal/types"
+        "github.com/0dayfall/webfinger-server/internal/types"
         "context"
         "encoding/json"
         "fmt"
@@ -1316,7 +1316,7 @@ func NewRedisCache(redisURL, password string, db int) (*RedisCache, error) <span
 
         <span class="cov0" title="0">return &amp;RedisCache{
                 client: client,
-                prefix: "asdf:webfinger:",
+                prefix: "webfinger:",
         }, nil</span>
 }
 
@@ -1610,7 +1610,7 @@ func Load() (*Config, error) <span class="cov0" title="0">{
         setDefaults(v)
 
         // Environment variables
-        v.SetEnvPrefix("ASDF")
+        v.SetEnvPrefix("WEBFINGER")
         v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
         v.AutomaticEnv()
 
@@ -2357,7 +2357,7 @@ import (
 func ParseResource(request *http.Request) (string, error) <span class="cov8" title="1">{
         resource := request.URL.Query().Get("resource")
         if resource == "" </span><span class="cov0" title="0">{
-                return "", errors.New("asdf: missing resource parameter")
+                return "", errors.New("webfinger-server: missing resource parameter")
         }</span>
 
         <span class="cov8" title="1">acct, err := GetSubject(resource)
@@ -2371,7 +2371,7 @@ func ParseResource(request *http.Request) (string, error) <span class="cov8" tit
 func GetSubject(resource string) (string, error) <span class="cov8" title="1">{
         acct := strings.TrimPrefix(resource, "acct:")
         if !IsValidResource(acct) </span><span class="cov0" title="0">{
-                return "", errors.New("asdf: invalid resource parameter")
+                return "", errors.New("webfinger-server: invalid resource parameter")
         }</span>
         <span class="cov8" title="1">return acct, nil</span>
 }
@@ -2384,7 +2384,7 @@ func IsValidResource(resource string) bool <span class="cov8" title="1">{
 		<pre class="file" id="file11" style="display: none">package rest
 
 import (
-        "asdf/internal/auth"
+        "github.com/0dayfall/webfinger-server/internal/auth"
         "context"
         "encoding/json"
         "net/http"
@@ -2763,8 +2763,8 @@ func getClientIP(r *http.Request) string <span class="cov0" title="0">{
 		<pre class="file" id="file12" style="display: none">package rest
 
 import (
-        "asdf/internal/store"
-        "asdf/internal/types"
+        "github.com/0dayfall/webfinger-server/internal/store"
+        "github.com/0dayfall/webfinger-server/internal/types"
         "context"
         "encoding/json"
         "html/template"
@@ -2980,9 +2980,9 @@ func LoginPage(w http.ResponseWriter, r *http.Request) <span class="cov0" title=
 		<pre class="file" id="file14" style="display: none">package rest
 
 import (
-        "asdf/internal/resource"
-        "asdf/internal/store"
-        "asdf/internal/types"
+        "github.com/0dayfall/webfinger-server/internal/resource"
+        "github.com/0dayfall/webfinger-server/internal/store"
+        "github.com/0dayfall/webfinger-server/internal/types"
         "bytes"
         "encoding/json"
         "log"
@@ -3035,14 +3035,14 @@ func writeResponse(w http.ResponseWriter, content *types.JRD) <span class="cov0"
 		<pre class="file" id="file15" style="display: none">package server
 
 import (
-        "asdf/internal/auth"
-        "asdf/internal/cache"
-        "asdf/internal/config"
-        "asdf/internal/middleware"
-        "asdf/internal/migrations"
-        "asdf/internal/monitoring"
-        "asdf/internal/rest"
-        "asdf/internal/store"
+        "github.com/0dayfall/webfinger-server/internal/auth"
+        "github.com/0dayfall/webfinger-server/internal/cache"
+        "github.com/0dayfall/webfinger-server/internal/config"
+        "github.com/0dayfall/webfinger-server/internal/middleware"
+        "github.com/0dayfall/webfinger-server/internal/migrations"
+        "github.com/0dayfall/webfinger-server/internal/monitoring"
+        "github.com/0dayfall/webfinger-server/internal/rest"
+        "github.com/0dayfall/webfinger-server/internal/store"
         "context"
         "fmt"
         "log"
@@ -3073,7 +3073,7 @@ func Start() error <span class="cov0" title="0">{
         }</span>
 
         <span class="cov0" title="0">logger := metrics.Logger()
-        logger.Info("Starting ASDF WebFinger Server")
+        logger.Info("Starting WebFinger Server")
 
         // Connect to database
         pool, err := pgxpool.New(context.Background(), cfg.Database.URL)
@@ -3225,8 +3225,8 @@ func seedTestData(ctx context.Context, store *store.PostgresStore) error <span c
 		<pre class="file" id="file16" style="display: none">package store
 
 import (
-        "asdf/internal/resource"
-        "asdf/internal/types"
+        "github.com/0dayfall/webfinger-server/internal/resource"
+        "github.com/0dayfall/webfinger-server/internal/types"
         "encoding/json"
         "errors"
         "log"
@@ -3291,7 +3291,7 @@ func (app *Data) SaveData(fileName string) error <span class="cov0" title="0">{
 		<pre class="file" id="file17" style="display: none">package store
 
 import (
-        "asdf/internal/types"
+        "github.com/0dayfall/webfinger-server/internal/types"
         "context"
 )
 
@@ -3330,7 +3330,7 @@ func (m *MockStore) SearchSubjects(_ context.Context, query string) ([]string, e
 		<pre class="file" id="file18" style="display: none">package store
 
 import (
-        "asdf/internal/types"
+        "github.com/0dayfall/webfinger-server/internal/types"
         "context"
         "encoding/json"
 

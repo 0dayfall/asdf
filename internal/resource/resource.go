@@ -9,7 +9,7 @@ import (
 func ParseResource(request *http.Request) (string, error) {
 	resource := request.URL.Query().Get("resource")
 	if resource == "" {
-		return "", errors.New("asdf: missing resource parameter")
+		return "", errors.New("webfinger-server: missing resource parameter")
 	}
 
 	acct, err := GetSubject(resource)
@@ -23,7 +23,7 @@ func ParseResource(request *http.Request) (string, error) {
 func GetSubject(resource string) (string, error) {
 	acct := strings.TrimPrefix(resource, "acct:")
 	if !IsValidResource(acct) {
-		return "", errors.New("asdf: invalid resource parameter")
+		return "", errors.New("webfinger-server: invalid resource parameter")
 	}
 	return acct, nil
 }

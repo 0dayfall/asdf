@@ -1,7 +1,7 @@
 package store
 
 import (
-	"asdf/internal/types"
+	"github.com/0dayfall/webfinger-server/internal/types"
 	"context"
 )
 

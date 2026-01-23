@@ -1,7 +1,7 @@
 package main
 
 import (
-	"asdf/internal/config"
+	"github.com/0dayfall/webfinger-server/internal/config"
 	"testing"
 )
 

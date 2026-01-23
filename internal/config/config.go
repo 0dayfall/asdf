@@ -66,7 +66,7 @@ func Load() (*Config, error) {
 	setDefaults(v)
 
 	// Environment variables
-	v.SetEnvPrefix("ASDF")
+	v.SetEnvPrefix("WEBFINGER")
 	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	v.AutomaticEnv()
 

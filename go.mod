@@ -1,4 +1,4 @@
-module asdf
+module github.com/0dayfall/webfinger-server
 
 go 1.23.0
 

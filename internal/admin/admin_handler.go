@@ -1,9 +1,9 @@
 package admin
 
 import (
-	"asdf/internal/auth"
-	"asdf/internal/monitoring"
-	"asdf/internal/store"
+	"github.com/0dayfall/webfinger-server/internal/auth"
+	"github.com/0dayfall/webfinger-server/internal/monitoring"
+	"github.com/0dayfall/webfinger-server/internal/store"
 	"encoding/json"
 	"net/http"
 	"strconv"

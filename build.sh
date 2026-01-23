@@ -1,9 +1,9 @@
 #!/bin/bash
 
-# ASDF WebFinger Server - Build and Test Script
+# WebFinger Server - Build and Test Script
 set -e
 
-echo "🏗️  Building ASDF WebFinger Server..."
+echo "🏗️  Building WebFinger Server..."
 
 # Colors for output
 GREEN='\033[0;32m'
@@ -22,7 +22,7 @@ echo -e "${YELLOW}🏗️  Building all packages...${NC}"
 go build ./...
 
 echo -e "${YELLOW}🏗️  Building main binary...${NC}"
-go build -o asdf ./cmd/asdf
+go build -o webfinger-server ./cmd/webfinger-server
 
 echo -e "${YELLOW}🧪 Running tests...${NC}"
 go test ./... -v
@@ -48,15 +48,15 @@ echo -e "${GREEN}🎉 Build Summary:${NC}"
 echo -e "${GREEN}✅ Dependencies downloaded${NC}"
 echo -e "${GREEN}✅ Code vetted${NC}"
 echo -e "${GREEN}✅ All packages built successfully${NC}"
-echo -e "${GREEN}✅ Main binary created: ./asdf${NC}"
+echo -e "${GREEN}✅ Main binary created: ./webfinger-server${NC}"
 echo -e "${GREEN}✅ All tests passed${NC}"
 echo -e "${GREEN}✅ Coverage report generated: coverage.html${NC}"
 echo ""
 
 # Binary info
-if [ -f "./asdf" ]; then
+if [ -f "./webfinger-server" ]; then
     echo -e "${YELLOW}📄 Binary information:${NC}"
-    ls -lh ./asdf
+    ls -lh ./webfinger-server
     echo ""
 fi
 
@@ -66,4 +66,4 @@ echo "Next steps:"
 echo "  • Copy .env.example to .env and configure"
 echo "  • Generate TLS certificates (see README.md)"
 echo "  • Run: docker-compose up --build"
-echo "  • Or run locally: ./asdf"
+echo "  • Or run locally: ./webfinger-server"

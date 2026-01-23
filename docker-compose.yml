@@ -3,8 +3,8 @@ services:
   web:
     build: .
     volumes:
-      - asdf-data:/data
-      - asdf-data:/certs
+      - webfinger-data:/data
+      - webfinger-data:/certs
       - ./config.yaml:/app/config.yaml
     ports:
       - "${PORT:-8080}:${PORT:-8080}"
@@ -15,9 +15,9 @@ services:
       - db
       - redis
     environment:
-      - ASDF_DATABASE_URL=postgres://webfinger:secret@db:5432/webfinger?sslmode=disable
-      - ASDF_REDIS_URL=redis://redis:6379
-      - ASDF_SERVER_ENV=development
+      - WEBFINGER_DATABASE_URL=postgres://webfinger:secret@db:5432/webfinger?sslmode=disable
+      - WEBFINGER_REDIS_URL=redis://redis:6379
+      - WEBFINGER_SERVER_ENV=development
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:${PORT:-8080}/health"]
       interval: 30s
@@ -80,7 +80,7 @@ services:
 
 volumes:
   pgdata:
-  asdf-data:
+  webfinger-data:
   redis-data:
   prometheus-data:
   grafana-data:

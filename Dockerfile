@@ -11,7 +11,7 @@ COPY . .
 COPY ./data/data.json /data/data.json
 
 # Build the Go app
-RUN go build -o main ./cmd/asdf
+RUN go build -o webfinger-server ./cmd/webfinger-server
 
 # Expose env variables (this is for documentation purposes)
 EXPOSE $PORT
@@ -20,4 +20,4 @@ EXPOSE $SSL_KEY_PATH
 EXPOSE $JWT_SECRET
 
 # Run the binary program produced by `go install`
-CMD ["/app/main"]   
+CMD ["/app/webfinger-server"]   

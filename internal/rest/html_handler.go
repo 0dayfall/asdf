@@ -1,8 +1,8 @@
 package rest
 
 import (
-	"asdf/internal/store"
-	"asdf/internal/types"
+	"github.com/0dayfall/webfinger-server/internal/store"
+	"github.com/0dayfall/webfinger-server/internal/types"
 	"context"
 	"encoding/json"
 	"html/template"
