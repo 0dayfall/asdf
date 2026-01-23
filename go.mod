@@ -2,7 +2,7 @@ module github.com/0dayfall/webfinger-server
 
 go 1.23.0
 
-toolchain go1.23.11
+toolchain go1.24.9
 
 require (
 	github.com/golang-jwt/jwt/v5 v5.3.0
