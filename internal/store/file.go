@@ -1,64 +1,83 @@
 package store
 
 import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"os"
+	"strings"
+
 	"github.com/0dayfall/webfinger-server/internal/resource"
 	"github.com/0dayfall/webfinger-server/internal/types"
-	"encoding/json"
-	"errors"
-	"log"
-	"os"
 )
 
-type Data struct {
-	data []types.JRD
+// FileStore is a read-only Store backed by a JSON file containing an array
+// of JRD records. It is the zero-dependency default: point the server at a
+// data file and it serves WebFinger lookups with nothing else running.
+type FileStore struct {
+	records    []types.JRD
+	bySubject  map[string]*types.JRD
+	subjectSet []string
 }
 
-func NewData() *Data {
-	return &Data{}
-}
-
-func (app *Data) LoadData(fileName string) error {
-	dir, _ := os.Getwd()
-	file, err := os.Open(fileName)
+// NewFileStore loads and indexes the JSON data file at path.
+func NewFileStore(path string) (*FileStore, error) {
+	raw, err := os.ReadFile(path)
 	if err != nil {
-		log.Printf("Error opening file: %s", err.Error()+dir)
-		return errors.New("Error loading file")
+		return nil, fmt.Errorf("store: read data file %q: %w", path, err)
 	}
-	defer file.Close()
 
-	decoder := json.NewDecoder(file)
-	if err := decoder.Decode(&app.data); err != nil {
-		log.Printf("Error decoding JSON: %v", err)
-		return errors.New("Error decoding JSON")
+	var records []types.JRD
+	if err := json.Unmarshal(raw, &records); err != nil {
+		return nil, fmt.Errorf("store: parse data file %q: %w", path, err)
 	}
-	return nil
+
+	fs := &FileStore{
+		records:   records,
+		bySubject: make(map[string]*types.JRD, len(records)),
+	}
+	for i := range fs.records {
+		jrd := &fs.records[i]
+		key, err := resource.Canonicalize(jrd.Subject)
+		if err != nil {
+			return nil, fmt.Errorf("store: invalid subject %q in %q: %w", jrd.Subject, path, err)
+		}
+		fs.bySubject[key] = jrd
+		fs.subjectSet = append(fs.subjectSet, jrd.Subject)
+
+		// Also allow lookup by alias so https://... profile URIs resolve.
+		for _, alias := range jrd.Aliases {
+			if _, exists := fs.bySubject[alias]; !exists {
+				fs.bySubject[alias] = jrd
+			}
+		}
+	}
+
+	return fs, nil
 }
 
-func (app *Data) LookupResource(subject string) (*types.JRD, error) {
-	for _, jrd := range app.data {
-		acct, err := resource.GetSubject(jrd.Subject)
-		if err != nil {
-			return nil, err
-		}
-		if acct == subject {
-			return &jrd, nil
-		}
+// Len reports the number of records loaded.
+func (fs *FileStore) Len() int {
+	return len(fs.records)
+}
+
+// LookupBySubject returns the JRD for a canonical subject or alias,
+// or nil when unknown.
+func (fs *FileStore) LookupBySubject(_ context.Context, subject string) (*types.JRD, error) {
+	if jrd, ok := fs.bySubject[subject]; ok {
+		return jrd, nil
 	}
 	return nil, nil
 }
 
-func (app *Data) SaveData(fileName string) error {
-	file, err := os.Create(fileName)
-	if err != nil {
-		log.Printf("Error creating file: %v", err)
-		return errors.New("Error creating file")
+// SearchSubjects returns subjects containing the query, case-insensitively.
+func (fs *FileStore) SearchSubjects(_ context.Context, query string) ([]string, error) {
+	query = strings.ToLower(query)
+	var results []string
+	for _, subject := range fs.subjectSet {
+		if strings.Contains(strings.ToLower(subject), query) {
+			results = append(results, subject)
+		}
 	}
-	defer file.Close()
-
-	encoder := json.NewEncoder(file)
-	if err := encoder.Encode(app.data); err != nil {
-		log.Printf("Error encoding JSON: %v", err)
-		return errors.New("Error encoding JSON")
-	}
-	return nil
+	return results, nil
 }

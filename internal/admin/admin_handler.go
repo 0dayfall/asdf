@@ -1,10 +1,10 @@
 package admin
 
 import (
+	"encoding/json"
 	"github.com/0dayfall/webfinger-server/internal/auth"
 	"github.com/0dayfall/webfinger-server/internal/monitoring"
 	"github.com/0dayfall/webfinger-server/internal/store"
-	"encoding/json"
 	"net/http"
 	"strconv"
 	"time"

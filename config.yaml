@@ -6,8 +6,15 @@ server:
   key_path: "/certs/server.key"
   env: "production"
 
+# Standalone mode (default): WebFinger records are served from this JSON file.
+# No database or Redis required.
+store:
+  data_file: "data/data.json"
+
+# Database mode (optional): uncomment url to enable PostgreSQL, auth, and
+# user management. Redis is used as a cache when reachable.
 database:
-  url: "postgres://webfinger:secret@localhost:5432/webfinger?sslmode=disable"
+  # url: "postgres://webfinger:secret@localhost:5432/webfinger?sslmode=disable"
   max_open_conns: 25
   max_idle_conns: 5
 

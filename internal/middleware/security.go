@@ -71,26 +71,40 @@ func (rl *RateLimiter) Cleanup() {
 }
 
 // CORS middleware for handling cross-origin requests
+// CORS returns a middleware handling cross-origin requests.
+//
+// Credentials are only ever allowed for origins listed EXPLICITLY in
+// allowedOrigins. A wildcard ("*") entry permits non-credentialed requests
+// from any origin; it never enables credentials, and the wildcard is sent
+// literally rather than echoing the caller's origin. Echoing an arbitrary
+// Origin together with Access-Control-Allow-Credentials: true would let any
+// website make authenticated requests on behalf of a logged-in user.
 func CORS(allowedOrigins []string, allowCredentials bool) func(http.Handler) http.Handler {
+	wildcard := false
+	explicit := make(map[string]struct{}, len(allowedOrigins))
+	for _, o := range allowedOrigins {
+		if o == "*" {
+			wildcard = true
+			continue
+		}
+		explicit[o] = struct{}{}
+	}
+
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			origin := r.Header.Get("Origin")
+			w.Header().Add("Vary", "Origin")
 
-			// Check if origin is allowed
-			allowed := false
-			for _, allowedOrigin := range allowedOrigins {
-				if allowedOrigin == "*" || allowedOrigin == origin {
-					allowed = true
-					break
-				}
-			}
-
-			if allowed {
+			_, explicitlyAllowed := explicit[origin]
+			switch {
+			case origin != "" && explicitlyAllowed:
 				w.Header().Set("Access-Control-Allow-Origin", origin)
-			}
-
-			if allowCredentials {
-				w.Header().Set("Access-Control-Allow-Credentials", "true")
+				if allowCredentials {
+					w.Header().Set("Access-Control-Allow-Credentials", "true")
+				}
+			case wildcard:
+				// Anonymous access only; browsers reject credentials with "*".
+				w.Header().Set("Access-Control-Allow-Origin", "*")
 			}
 
 			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")

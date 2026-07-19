@@ -1,6 +1,12 @@
 package server
 
 import (
+	"context"
+	"fmt"
+	"log"
+	"net/http"
+	"time"
+
 	"github.com/0dayfall/webfinger-server/internal/auth"
 	"github.com/0dayfall/webfinger-server/internal/cache"
 	"github.com/0dayfall/webfinger-server/internal/config"
@@ -9,13 +15,9 @@ import (
 	"github.com/0dayfall/webfinger-server/internal/monitoring"
 	"github.com/0dayfall/webfinger-server/internal/rest"
 	"github.com/0dayfall/webfinger-server/internal/store"
-	"context"
-	"fmt"
-	"log"
-	"net/http"
-	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/sirupsen/logrus"
 )
 
 const wellKnownWebFinger = "/.well-known/webfinger"
@@ -24,23 +26,61 @@ func init() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 }
 
-// Start initializes and starts the server with all features
+// Start initializes and starts the server.
+//
+// When no database URL is configured the server runs in standalone mode:
+// WebFinger records are served from the JSON file at store.data_file with
+// no PostgreSQL, Redis, or authentication required. Configuring
+// WEBFINGER_DATABASE_URL enables the full stack.
 func Start() error {
-	// Load configuration
 	cfg, err := config.Load()
 	if err != nil {
 		return fmt.Errorf("failed to load config: %w", err)
 	}
 
-	// Initialize monitoring
 	metrics := monitoring.NewMetrics()
 	if err := metrics.SetLogLevel(cfg.Logging.Level); err != nil {
 		return fmt.Errorf("failed to set log level: %w", err)
 	}
-
 	logger := metrics.Logger()
-	logger.Info("Starting WebFinger Server")
 
+	if cfg.Database.URL == "" {
+		logger.Infof("Starting WebFinger Server (standalone mode, data file: %s)", cfg.Store.DataFile)
+		return startStandalone(cfg, metrics, logger)
+	}
+
+	logger.Info("Starting WebFinger Server (database mode)")
+	return startFull(cfg, metrics, logger)
+}
+
+// startStandalone serves WebFinger lookups from a JSON file: a single
+// binary and a data file, nothing else to deploy.
+func startStandalone(cfg *config.Config, metrics *monitoring.Metrics, logger *logrus.Logger) error {
+	fileStore, err := store.NewFileStore(cfg.Store.DataFile)
+	if err != nil {
+		return err
+	}
+	logger.Infof("Loaded %d WebFinger record(s)", fileStore.Len())
+
+	rest.LoadTemplates()
+	htmlHandler := &rest.HTMLHandler{Data: fileStore}
+	webfinger := &rest.WebFingerHandler{Data: fileStore}
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("/health", metrics.HealthCheckHandler())
+	mux.Handle("/metrics", metrics.Handler())
+	mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("web/static"))))
+	mux.Handle(wellKnownWebFinger, webfinger)
+	mux.Handle("/", htmlHandler)
+
+	handler := applyMiddleware(mux, cfg, metrics, logger)
+	addr := fmt.Sprintf("%s:%s", cfg.Server.Host, cfg.Server.Port)
+	return runServer(handler, addr, cfg, logger)
+}
+
+// startFull wires the PostgreSQL-backed server with optional Redis cache,
+// authentication, and user management.
+func startFull(cfg *config.Config, metrics *monitoring.Metrics, logger *logrus.Logger) error {
 	// Connect to database
 	pool, err := pgxpool.New(context.Background(), cfg.Database.URL)
 	if err != nil {
@@ -84,11 +124,15 @@ func Start() error {
 
 	// Initialize handlers
 	rest.LoadTemplates()
-	htmlHandler := &rest.HTMLHandler{Data: webfingerStore, Cache: redisCache}
+	htmlHandler := &rest.HTMLHandler{Data: webfingerStore}
 	authHandler := rest.NewAuthHandler(authService, userStore)
 
-	// Setup middleware
-	rateLimiter := middleware.NewRateLimiter(cfg.Security.RateLimitRPS, cfg.Security.RateLimitBurst)
+	webfinger := &rest.WebFingerHandler{Data: webfingerStore}
+	if redisCache != nil {
+		// Only assign when non-nil: a typed nil in the interface would
+		// bypass the handler's nil check.
+		webfinger.Cache = redisCache
+	}
 
 	// Create main router
 	mux := http.NewServeMux()
@@ -116,26 +160,12 @@ func Start() error {
 	// Admin endpoints (TODO: Add admin endpoints when needed)
 
 	// WebFinger endpoint (public)
-	mux.HandleFunc(wellKnownWebFinger, htmlHandler.HandleWebFinger)
+	mux.Handle(wellKnownWebFinger, webfinger)
 
 	// HTML frontend
 	mux.Handle("/", htmlHandler)
 
-	// Apply middleware chain
-	var handler http.Handler = mux
-
-	// Add middleware layers (applied in reverse order)
-	handler = middleware.Timeout(30 * time.Second)(handler)
-	handler = middleware.Logging(logger.Infof)(handler)
-	handler = metrics.HTTPMetricsMiddleware(handler)
-	handler = middleware.SecurityHeaders(cfg.Security.EnableCSP, cfg.Security.EnableHSTS)(handler)
-	handler = middleware.CORS(cfg.Security.AllowedOrigins, true)(handler)
-	handler = middleware.TrustedProxies(cfg.Security.TrustedProxies)(handler)
-	handler = rateLimiter.RateLimit(handler)
-
-	if cfg.Security.ForceHTTPS && cfg.IsProductionEnv() {
-		handler = middleware.HTTPSRedirect(true)(handler)
-	}
+	handler := applyMiddleware(mux, cfg, metrics, logger)
 
 	// Start background tasks
 	ctx := context.Background()
@@ -152,6 +182,26 @@ func Start() error {
 	}
 
 	return runServer(handler, addr, cfg, logger)
+}
+
+// applyMiddleware wraps the router with the shared middleware chain
+// (applied in reverse order).
+func applyMiddleware(mux *http.ServeMux, cfg *config.Config, metrics *monitoring.Metrics, logger *logrus.Logger) http.Handler {
+	rateLimiter := middleware.NewRateLimiter(cfg.Security.RateLimitRPS, cfg.Security.RateLimitBurst)
+
+	var handler http.Handler = mux
+	handler = middleware.Timeout(30 * time.Second)(handler)
+	handler = middleware.Logging(logger.Infof)(handler)
+	handler = metrics.HTTPMetricsMiddleware(handler)
+	handler = middleware.SecurityHeaders(cfg.Security.EnableCSP, cfg.Security.EnableHSTS)(handler)
+	handler = middleware.CORS(cfg.Security.AllowedOrigins, true)(handler)
+	handler = middleware.TrustedProxies(cfg.Security.TrustedProxies)(handler)
+	handler = rateLimiter.RateLimit(handler)
+
+	if cfg.Security.ForceHTTPS && cfg.IsProductionEnv() {
+		handler = middleware.HTTPSRedirect(true)(handler)
+	}
+	return handler
 }
 
 func runServer(handler http.Handler, addr string, cfg *config.Config, logger interface{ Infof(string, ...interface{}) }) error {
@@ -174,7 +224,6 @@ func runServer(handler http.Handler, addr string, cfg *config.Config, logger int
 
 // seedTestData creates test data for development and testing
 func seedTestData(ctx context.Context, store *store.PostgresStore) error {
-	// This replaces the old InitSchemaAndSeed method
 	// Check if example user already exists
 	_, err := store.LookupBySubject(ctx, "acct:example@example.com")
 	if err == nil {
@@ -183,6 +232,5 @@ func seedTestData(ctx context.Context, store *store.PostgresStore) error {
 	}
 
 	// Create example user using the new schema
-	// This would need to be implemented in the store
 	return nil
 }

@@ -1,10 +1,10 @@
 package cache
 
 import (
-	"github.com/0dayfall/webfinger-server/internal/types"
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/0dayfall/webfinger-server/internal/types"
 	"time"
 
 	"github.com/redis/go-redis/v9"

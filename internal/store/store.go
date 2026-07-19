@@ -1,9 +1,9 @@
 package store
 
 import (
-	"github.com/0dayfall/webfinger-server/internal/types"
 	"context"
 	"encoding/json"
+	"github.com/0dayfall/webfinger-server/internal/types"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )

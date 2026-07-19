@@ -9,6 +9,7 @@ import (
 
 type Config struct {
 	Server   ServerConfig   `mapstructure:"server"`
+	Store    StoreConfig    `mapstructure:"store"`
 	Database DatabaseConfig `mapstructure:"database"`
 	Redis    RedisConfig    `mapstructure:"redis"`
 	Auth     AuthConfig     `mapstructure:"auth"`
@@ -22,6 +23,12 @@ type ServerConfig struct {
 	CertPath string `mapstructure:"cert_path"`
 	KeyPath  string `mapstructure:"key_path"`
 	Env      string `mapstructure:"env"`
+}
+
+// StoreConfig selects the WebFinger record backend. When Database.URL is
+// empty the server runs standalone from the JSON file at DataFile.
+type StoreConfig struct {
+	DataFile string `mapstructure:"data_file"`
 }
 
 type DatabaseConfig struct {
@@ -92,6 +99,9 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("server.port", "8080")
 	v.SetDefault("server.host", "0.0.0.0")
 	v.SetDefault("server.env", "production")
+
+	// Store defaults (standalone mode reads JRD records from this file)
+	v.SetDefault("store.data_file", "data/data.json")
 
 	// Database defaults
 	v.SetDefault("database.max_open_conns", 25)

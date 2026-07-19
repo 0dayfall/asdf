@@ -1,8 +1,8 @@
 package store
 
 import (
-	"github.com/0dayfall/webfinger-server/internal/types"
 	"context"
+	"github.com/0dayfall/webfinger-server/internal/types"
 )
 
 type MockStore struct {

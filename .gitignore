@@ -26,3 +26,7 @@ go.work
 # Key files
 *.crt
 *.key
+
+# Secrets and local artifacts
+.env
+coverage*.html

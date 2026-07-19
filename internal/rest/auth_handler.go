@@ -1,9 +1,9 @@
 package rest
 
 import (
-	"github.com/0dayfall/webfinger-server/internal/auth"
 	"context"
 	"encoding/json"
+	"github.com/0dayfall/webfinger-server/internal/auth"
 	"net/http"
 	"strings"
 	"time"

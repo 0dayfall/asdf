@@ -8,7 +8,7 @@ Implements RFC 7033 for WebFinger discovery, designed to be small, auditable, an
 
 [![Go](https://github.com/0dayfall/webfinger-server/actions/workflows/go.yml/badge.svg)](https://github.com/0dayfall/webfinger-server/actions/workflows/go.yml)
 [![GoDoc](https://godoc.org/github.com/0dayfall/webfinger-server?status.png)](https://godoc.org/github.com/0dayfall/webfinger-server)
-[![license](http://img.shields.io/badge/license-GNU3-red.svg?)](https://raw.githubusercontent.com/0dayfall/webfinger-server/LICENSE)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 
 ## Quick curl example
 
@@ -40,6 +40,9 @@ A WebFinger server implementation following [RFC7033](https://datatracker.ietf.o
 
 ### Core WebFinger
 - ✅ RFC7033-compliant WebFinger endpoint (`/.well-known/webfinger`)
+- ✅ `rel` parameter filtering (RFC 7033 section 4.3)
+- ✅ `acct:` and generic URI resources (`https://...`, `mailto:...`)
+- ✅ Standalone mode: serve records from a JSON file with zero dependencies
 - ✅ JSON Resource Descriptor (JRD) responses
 - ✅ Subject aliases and properties support
 - ✅ Rel-typed links for social media verification
@@ -84,7 +87,38 @@ A WebFinger server implementation following [RFC7033](https://datatracker.ietf.o
 
 ## Quick Start
 
-### Using Docker Compose (Recommended)
+### Standalone (Recommended): one binary + one JSON file
+
+No database, no Redis, nothing else. Put your records in `data/data.json` and run:
+
+```bash
+go build -o webfinger-server ./cmd/webfinger-server
+WEBFINGER_SERVER_ENV=development ./webfinger-server
+
+curl "http://localhost:8080/.well-known/webfinger?resource=acct:example@example.com"
+```
+
+Each entry in the data file is a JRD record:
+
+```json
+[
+  {
+    "subject": "acct:alice@example.com",
+    "aliases": ["https://example.com/@alice"],
+    "links": [
+      {"rel": "http://webfinger.net/rel/profile-page", "type": "text/html", "href": "https://example.com/@alice"}
+    ]
+  }
+]
+```
+
+For production, run behind your HTTPS reverse proxy (Caddy, nginx, Traefik) or
+set `WEBFINGER_SERVER_CERT_PATH` / `WEBFINGER_SERVER_KEY_PATH` for built-in TLS.
+This mode is the default whenever no database URL is configured.
+
+### Database mode with Docker Compose (optional)
+
+Enables PostgreSQL-backed records, user accounts, JWT auth, and the admin features.
 
 1. **Clone and setup:**
    ```bash
@@ -116,8 +150,8 @@ A WebFinger server implementation following [RFC7033](https://datatracker.ietf.o
 
 1. **Prerequisites:**
    - Go 1.23+
-   - PostgreSQL 16+
-   - Redis 7+ (optional, for caching)
+   - PostgreSQL 16+ (only for database mode)
+   - Redis 7+ (optional cache, only used in database mode)
 
 2. **Build and run:**
    ```bash
