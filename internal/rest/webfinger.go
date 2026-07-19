@@ -1,13 +1,14 @@
 package rest
 
 import (
-	"github.com/0dayfall/webfinger-server/internal/resource"
-	"github.com/0dayfall/webfinger-server/internal/store"
-	"github.com/0dayfall/webfinger-server/internal/types"
 	"bytes"
 	"encoding/json"
 	"log"
 	"net/http"
+
+	"github.com/0dayfall/webfinger-server/internal/resource"
+	"github.com/0dayfall/webfinger-server/internal/store"
+	"github.com/0dayfall/webfinger-server/internal/types"
 )
 
 const (
@@ -32,6 +33,9 @@ func (wfh *WebFingerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Filter links by ?rel= parameters (RFC 7033 §4.4)
+	filterByRel(jrd, r.URL.Query()["rel"])
+
 	writeResponse(w, jrd)
 }
 
@@ -40,14 +44,13 @@ func writeResponse(w http.ResponseWriter, content *types.JRD) {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(content); err != nil {
-		log.Printf("Error writing body: %v", err)
+		log.Printf("Error encoding JRD: %v", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
 	if _, err := buf.WriteTo(w); err != nil {
-		log.Printf("Error writing body: %v", err)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		log.Printf("Error writing response: %v", err)
 	}
 }

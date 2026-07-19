@@ -1,90 +1,240 @@
-{{ define "search" }}
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>WebFinger Search</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="stylesheet" href="/static/style.css" />
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>xyzping - Your Internet Identity Directory!</title>
+  <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
-  <div class="container">
-    <h1>WebFinger Search</h1>
-    <input type="text" id="searchBox" placeholder="Search acct: identifiers..." />
-    <div id="results"></div>
-    <div id="profile"></div>
+
+<div class="page-wrapper">
+
+  <!-- ===== HEADER ===== -->
+  <div class="site-header">
+    <div style="font-size:40px; margin-bottom:4px;">🤖</div>
+    <div class="logo-text">xyzping</div>
+    <div class="site-tagline">Your Internet Identity Discovery Service Since 1999!</div>
   </div>
 
-  <script>
-    const input = document.getElementById('searchBox');
-    const results = document.getElementById('results');
-    const profile = document.getElementById('profile');
-    let controller = null;
+  <!-- ===== ANNOUNCEMENT ===== -->
+  <div class="announcement">
+    <span class="announcement-inner">
+      &nbsp;&nbsp;&nbsp;
+      💾 Powered by the InterNET! &nbsp;&nbsp;|&nbsp;&nbsp;
+      📟 Find anyone on the Information Superhighway! &nbsp;&nbsp;|&nbsp;&nbsp;
+      📖 The Internet&rsquo;s Global Phone Book! &nbsp;&nbsp;|&nbsp;&nbsp;
+      ✨ NEW! Free accounts — register TODAY! &nbsp;&nbsp;|&nbsp;&nbsp;
+      🔒 Your privacy, your rules! &nbsp;&nbsp;|&nbsp;&nbsp;
+      📡 Connecting humans since 1999!
+      &nbsp;&nbsp;&nbsp;
+    </span>
+  </div>
 
-    input.addEventListener('input', async () => {
-      const q = input.value.trim();
-      profile.innerHTML = '';
-      if (q.length < 2) {
-        results.innerHTML = '';
-        return;
-      }
+  <!-- ===== NAVIGATION ===== -->
+  <div class="navbar">
+    <a href="/">🏠 Home</a>
+    <a href="/register">📝 Register</a>
+    <a href="/login">🔑 Login</a>
+    <a href="/dashboard">👤 My Account</a>
+  </div>
 
-      if (controller) controller.abort();
-      controller = new AbortController();
+  <!-- ===== WELCOME ===== -->
+  <div class="content" style="text-align:center;">
+    <p style="font-size:15px; margin:0 0 8px;">
+      Welcome to <strong>xyzping</strong>, the Internet&rsquo;s premier identity discovery service!<br>
+      Look up <em>any</em> xyzping identity on the World Wide Web!
+    </p>
 
-      try {
-        const res = await fetch('/api/search?q=' + encodeURIComponent(q), { signal: controller.signal });
-        const data = await res.json();
+    <hr class="retro">
 
-        if (data.results.length) {
-          results.innerHTML = data.results.map(r =>
-            `<div class="result" data-acct="${r}">${r}</div>`
-          ).join('');
-        } else {
-          results.innerHTML = '<div class="result">No matches found.</div>';
-        }
-      } catch (err) {
-        if (err.name !== 'AbortError') {
-          results.innerHTML = '<div class="result">Search error.</div>';
-        }
+    <div class="section-title" style="text-align:left;">👉 Look Up an Identity!</div>
+
+    <div id="msg-error" class="msg-error"></div>
+
+    <div class="search-row">
+      <input
+        type="text"
+        id="searchInput"
+        class="search-input"
+        placeholder="acct:user@example.com"
+        autocomplete="off"
+      >
+      <button class="retro-btn retro-btn-primary" onclick="doLookup()">LOOK UP!</button>
+    </div>
+
+    <div id="autocomplete" style="border: 1px solid #808080; display:none; background:#fff;"></div>
+
+    <div id="profileArea"></div>
+  </div>
+
+  <!-- ===== HOW TO USE ===== -->
+  <div class="content-gray">
+    <div class="section-title">❓ What is xyzping?</div>
+    <p style="font-family: Arial, sans-serif; font-size: 12px; margin: 0 0 8px;">
+      xyzping is a protocol that lets YOU discover information about people and things
+      on the Internet! Just type an <code>acct:</code> address above and click
+      <strong>LOOK UP!</strong> to see their identity record.
+    </p>
+    <p style="font-family: Arial, sans-serif; font-size: 12px; margin: 0;">
+      Don&rsquo;t have an account? <a href="/register"><strong>Register for FREE!</strong></a>
+      Already a member? <a href="/login">Log in here!</a>
+    </p>
+  </div>
+
+  <!-- ===== DIVIDER ===== -->
+  <div class="star-divider">✦ ✦ ✦ ✦ ✦ ✦ ✦ ✦ ✦</div>
+
+  <!-- ===== HIT COUNTER ===== -->
+  <div class="counter-section">
+    <span class="counter-digits" id="hitCounter">000000</span>
+    &nbsp; identities registered!
+  </div>
+
+  <!-- ===== BADGES ===== -->
+  <div class="badges">
+    <span class="badge">🌐 Best viewed in Netscape Navigator 4.0</span>
+    <span class="badge">📺 Optimized for 800×600</span>
+    <span class="badge">🐹 Go Powered</span>
+    <span class="badge">✅ RFC 7033 Compliant</span>
+  </div>
+
+  <!-- ===== FOOTER ===== -->
+  <div class="site-footer">
+    <a href="/">Home</a> &nbsp;|&nbsp;
+    <a href="/register">Register</a> &nbsp;|&nbsp;
+    <a href="/login">Login</a>
+    <br>
+    &copy; 1999&ndash;2025 xyzping &mdash;
+    <em>This page uses advanced JavaScript technology</em>
+  </div>
+
+</div><!-- end page-wrapper -->
+
+<script>
+var searchInput = document.getElementById('searchInput');
+var autocomplete = document.getElementById('autocomplete');
+var profileArea = document.getElementById('profileArea');
+var msgError = document.getElementById('msg-error');
+var debounceTimer;
+
+searchInput.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') doLookup();
+});
+
+searchInput.addEventListener('input', function() {
+  var q = searchInput.value.trim();
+  clearTimeout(debounceTimer);
+  if (q.length < 2) { autocomplete.style.display = 'none'; return; }
+  debounceTimer = setTimeout(function() { doSearch(q); }, 250);
+});
+
+function doSearch(q) {
+  fetch('/api/search?q=' + encodeURIComponent(q))
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      var results = data.results || [];
+      if (!results.length) { autocomplete.style.display = 'none'; return; }
+      autocomplete.innerHTML = results.map(function(r) {
+        return '<div class="result-item" onclick="pickResult(\'' + escapeHtml(r) + '\')">' + escapeHtml(r) + '</div>';
+      }).join('');
+      autocomplete.style.display = 'block';
+    })
+    .catch(function() { autocomplete.style.display = 'none'; });
+}
+
+function pickResult(acct) {
+  searchInput.value = acct;
+  autocomplete.style.display = 'none';
+  doLookup();
+}
+
+function doLookup() {
+  var resource = searchInput.value.trim();
+  autocomplete.style.display = 'none';
+  msgError.style.display = 'none';
+  profileArea.innerHTML = '';
+
+  if (!resource) {
+    showError('Please enter an acct: address to look up!');
+    return;
+  }
+
+  profileArea.innerHTML = '<p style="font-family:Arial;font-size:12px;color:#808080;">⏳ Contacting identity server...</p>';
+
+  fetch('/.well-known/webfinger?resource=' + encodeURIComponent(resource))
+    .then(function(r) {
+      if (r.status === 404) throw new Error('not found');
+      if (!r.ok) throw new Error('server error');
+      return r.json();
+    })
+    .then(function(data) { renderProfile(data); })
+    .catch(function(e) {
+      profileArea.innerHTML = '';
+      if (e.message === 'not found') {
+        showError('No identity found for: ' + escapeHtml(resource));
+      } else {
+        showError('Could not look up identity. Please try again!');
       }
     });
+}
 
-    results.addEventListener('click', async (e) => {
-      const el = e.target.closest('.result');
-      if (!el || !el.dataset.acct) return;
+function renderProfile(data) {
+  var html = '<div class="profile-card">';
+  html += '<h3>📋 Identity Record</h3>';
+  html += '<p><span class="field-label">Subject:</span><br>';
+  html += '<code>' + escapeHtml(data.subject || '') + '</code></p>';
 
-      const acct = el.dataset.acct;
-      profile.innerHTML = '<pre>Loading...</pre>';
-
-      try {
-        const res = await fetch('/.well-known/webfinger?resource=' + encodeURIComponent(acct));
-        const data = await res.json();
-
-        const aliasList = (data.aliases || []).map(alias =>
-          `<li><a href="${alias}" target="_blank" rel="noopener noreferrer">${alias}</a></li>`
-        ).join('');
-
-        profile.innerHTML = `
-          <div class="card">
-            <div class="card-header">
-              <strong>Subject:</strong> ${data.subject}
-            </div>
-            <div class="card-body">
-              ${aliasList ? `<strong>Aliases:</strong><ul>${aliasList}</ul>` : '<em>No aliases</em>'}
-            </div>
-            <details style="margin-top: 1em;">
-              <summary>Raw JSON</summary>
-              <pre>${JSON.stringify(data, null, 2)}</pre>
-            </details>
-          </div>
-        `;
-
-      } catch (err) {
-        profile.innerHTML = '<pre>Error loading result.</pre>';
-      }
+  if (data.aliases && data.aliases.length) {
+    html += '<p><span class="field-label">Aliases:</span><br>';
+    data.aliases.forEach(function(a) {
+      html += '<a href="' + escapeHtml(a) + '" target="_blank" rel="noopener">' + escapeHtml(a) + '</a><br>';
     });
-  </script>
+    html += '</p>';
+  }
+
+  if (data.links && data.links.length) {
+    html += '<div class="field-label" style="margin-bottom:4px;">Links:</div>';
+    html += '<table class="link-table"><tr><th>Relation</th><th>URL</th></tr>';
+    data.links.forEach(function(link) {
+      html += '<tr><td>' + escapeHtml(link.rel || '') + '</td><td>';
+      if (link.href) {
+        html += '<a href="' + escapeHtml(link.href) + '" target="_blank" rel="noopener">' + escapeHtml(link.href) + '</a>';
+      }
+      html += '</td></tr>';
+    });
+    html += '</table>';
+  }
+
+  html += '<details style="margin-top:10px;font-family:Arial;font-size:11px;">';
+  html += '<summary>📄 Raw JSON</summary>';
+  html += '<pre style="font-size:11px;overflow:auto;">' + escapeHtml(JSON.stringify(data, null, 2)) + '</pre>';
+  html += '</details>';
+  html += '</div>';
+
+  profileArea.innerHTML = html;
+}
+
+function showError(msg) {
+  msgError.textContent = '⚠️ ' + msg;
+  msgError.style.display = 'block';
+}
+
+function escapeHtml(s) {
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// Fake hit counter — fetch real count from API
+fetch('/api/search?q=@')
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    var n = (data.results || []).length;
+    document.getElementById('hitCounter').textContent = String(n).padStart(6, '0');
+  })
+  .catch(function() {});
+</script>
+
 </body>
 </html>
-{{ end }}

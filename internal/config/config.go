@@ -12,13 +12,26 @@ type Config struct {
 	Database DatabaseConfig `mapstructure:"database"`
 	Redis    RedisConfig    `mapstructure:"redis"`
 	Auth     AuthConfig     `mapstructure:"auth"`
+	OAuth    OAuthConfig    `mapstructure:"oauth"`
 	Security SecurityConfig `mapstructure:"security"`
 	Logging  LoggingConfig  `mapstructure:"logging"`
+}
+
+type OAuthConfig struct {
+	BaseURL           string `mapstructure:"base_url"`            // e.g. http://localhost:8080
+	FacebookClientID  string `mapstructure:"facebook_client_id"`
+	FacebookSecret    string `mapstructure:"facebook_secret"`
+	InstagramClientID string `mapstructure:"instagram_client_id"` // same app as Facebook
+	InstagramSecret   string `mapstructure:"instagram_secret"`
+	XClientID         string `mapstructure:"x_client_id"`
+	XSecret           string `mapstructure:"x_secret"`
+	BlueskyEnabled    bool   `mapstructure:"bluesky_enabled"`
 }
 
 type ServerConfig struct {
 	Port     string `mapstructure:"port"`
 	Host     string `mapstructure:"host"`
+	Domain   string `mapstructure:"domain"` // public hostname, e.g. xyzping.com or localhost
 	CertPath string `mapstructure:"cert_path"`
 	KeyPath  string `mapstructure:"key_path"`
 	Env      string `mapstructure:"env"`
@@ -91,6 +104,7 @@ func setDefaults(v *viper.Viper) {
 	// Server defaults
 	v.SetDefault("server.port", "8080")
 	v.SetDefault("server.host", "0.0.0.0")
+	v.SetDefault("server.domain", "localhost")
 	v.SetDefault("server.env", "production")
 
 	// Database defaults

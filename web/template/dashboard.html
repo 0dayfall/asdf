@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>My Account - xyzping</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+
+<div class="page-wrapper">
+
+  <div class="site-header">
+    <div style="font-size:36px; margin-bottom:4px;">👤</div>
+    <div class="logo-text">xyzping</div>
+    <div class="site-tagline">My Account Dashboard</div>
+  </div>
+
+  <div class="announcement">
+    <span class="announcement-inner">
+      &nbsp;&nbsp;&nbsp;
+      🎉 Welcome to your personal xyzping dashboard! &nbsp;&nbsp;|&nbsp;&nbsp;
+      🌐 Your identity is live on the Internet!
+      &nbsp;&nbsp;&nbsp;
+    </span>
+  </div>
+
+  <div class="navbar">
+    <a href="/">🏠 Home</a>
+    <a href="/register">📝 Register</a>
+    <a href="/login">🔑 Login</a>
+    <a href="/dashboard">👤 My Account</a>
+  </div>
+
+  <!-- Not logged in state -->
+  <div id="notLoggedIn" class="content" style="display:none; text-align:center;">
+    <p style="font-family:Arial;font-size:14px;">
+      ⚠️ You must be logged in to view this page!
+    </p>
+    <a href="/login" class="retro-btn retro-btn-primary" style="display:inline-block;text-decoration:none;padding:6px 16px;">
+      🔑 Login Now!
+    </a>
+    &nbsp;
+    <a href="/register" class="retro-btn" style="display:inline-block;text-decoration:none;padding:6px 16px;">
+      📝 Register FREE!
+    </a>
+  </div>
+
+  <!-- Loading state -->
+  <div id="loadingArea" class="content" style="text-align:center;">
+    <p style="font-family:Arial;font-size:13px;color:#808080;">
+      ⏳ Loading your account information...
+    </p>
+  </div>
+
+  <!-- Logged in state -->
+  <div id="dashboard" style="display:none;">
+
+    <div class="content">
+      <div class="user-greeting" id="greeting">Welcome back!</div>
+      <div style="font-family:Arial;font-size:12px;color:#808080;margin-bottom:10px;">
+        Logged in as: <strong id="userEmail"></strong>
+      </div>
+
+      <hr class="retro">
+
+      <div class="section-title">🌐 Your xyzping Identity</div>
+      <div class="identity-box" id="userSubject">Loading...</div>
+
+      <p style="font-family:Arial;font-size:12px;margin:6px 0;">
+        Anyone can look you up by searching for your identity above!
+        Share your <code>acct:</code> address and let the world discover you!
+      </p>
+
+      <div style="margin-top:10px;">
+        <button class="retro-btn" onclick="lookupSelf()">🔍 View My xyzping Record</button>
+        &nbsp;
+        <button class="retro-btn" onclick="copyIdentity()">📋 Copy Identity</button>
+      </div>
+    </div>
+
+    <div class="content" id="wfRecord" style="display:none;">
+      <div class="section-title">📋 My xyzping Record</div>
+      <div id="wfRecordContent"></div>
+    </div>
+
+    <div class="content">
+      <div class="section-title">⚙️ Account Information</div>
+      <table style="width:100%;font-family:Arial;font-size:12px;border-collapse:collapse;">
+        <tr>
+          <td style="padding:4px;font-weight:bold;color:#000080;width:40%;">Username:</td>
+          <td style="padding:4px;" id="infoUsername">—</td>
+        </tr>
+        <tr style="background:#f0f0f0;">
+          <td style="padding:4px;font-weight:bold;color:#000080;">Email:</td>
+          <td style="padding:4px;" id="infoEmail">—</td>
+        </tr>
+        <tr>
+          <td style="padding:4px;font-weight:bold;color:#000080;">Account Status:</td>
+          <td style="padding:4px;" id="infoStatus">—</td>
+        </tr>
+        <tr style="background:#f0f0f0;">
+          <td style="padding:4px;font-weight:bold;color:#000080;">Member Since:</td>
+          <td style="padding:4px;" id="infoCreated">—</td>
+        </tr>
+        <tr>
+          <td style="padding:4px;font-weight:bold;color:#000080;">Last Login:</td>
+          <td style="padding:4px;" id="infoLastLogin">—</td>
+        </tr>
+      </table>
+
+      <hr class="retro">
+
+      <button class="retro-btn" onclick="doLogout()" style="background:#ff8080;border-color:#800000;">
+        🚪 Sign Out
+      </button>
+    </div>
+
+    <!-- Social Links Management -->
+    <div class="content">
+      <div class="section-title">🔗 My Social Links</div>
+      <p style="font-family:Arial;font-size:11px;color:#606060;margin:0 0 8px 0;">
+        Control which links appear in your xyzping record and who can see them.
+      </p>
+      <div id="linksMsg" class="msg-error" style="display:none;"></div>
+      <div id="linksList"></div>
+      <hr class="retro">
+      <div class="section-title" style="font-size:12px;">➕ Add a Link</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-family:Arial;font-size:12px;">
+        <div>
+          <label>Platform:</label>
+          <select id="newPlatform" onchange="platformChanged()" style="width:100%;font-family:Arial;font-size:12px;padding:4px;border:2px inset #808080;">
+            <option value="instagram">📸 Instagram</option>
+            <option value="bluesky">🦋 Bluesky</option>
+            <option value="x">🐦 X (Twitter)</option>
+            <option value="linkedin">💼 LinkedIn</option>
+            <option value="github">🐙 GitHub</option>
+            <option value="facebook">📘 Facebook</option>
+            <option value="tiktok">🎵 TikTok</option>
+            <option value="youtube">▶️ YouTube</option>
+            <option value="website">🌐 Website</option>
+            <option value="email">✉️ Email</option>
+            <option value="phone">📞 Phone</option>
+            <option value="other">🔗 Other</option>
+          </select>
+        </div>
+        <div>
+          <label>Visibility:</label>
+          <select id="newVisibility" style="width:100%;font-family:Arial;font-size:12px;padding:4px;border:2px inset #808080;">
+            <option value="public">🌍 Public</option>
+            <option value="registered">👤 Registered users</option>
+            <option value="friends">👫 Friends only</option>
+            <option value="private">🔒 Private</option>
+          </select>
+        </div>
+        <div style="grid-column:span 2;">
+          <label id="usernameLabel">Username:</label>
+          <input type="text" id="newUsername" placeholder="e.g. johndoe" style="width:100%;box-sizing:border-box;" oninput="usernameChanged()">
+        </div>
+        <div style="grid-column:span 2;" id="hrefRow">
+          <label>URL (auto-filled, or enter manually):</label>
+          <input type="text" id="newHref" placeholder="https://..." style="width:100%;box-sizing:border-box;">
+        </div>
+        <div style="grid-column:span 2;">
+          <label>Title (optional):</label>
+          <input type="text" id="newTitle" placeholder="e.g. My Instagram" style="width:100%;box-sizing:border-box;">
+        </div>
+      </div>
+      <button class="retro-btn retro-btn-primary" onclick="addLink()" style="margin-top:8px;">
+        ➕ Add Link
+      </button>
+    </div>
+
+    <!-- Connections quick-link -->
+    <div class="content">
+      <div class="section-title">👫 Connections</div>
+      <p style="font-family:Arial;font-size:11px;color:#606060;margin:0 0 8px 0;">
+        Manage your friends &amp; connections to share private links with them.
+      </p>
+      <a href="/connections" class="retro-btn" style="display:inline-block;text-decoration:none;">
+        👫 Manage Connections
+      </a>
+    </div>
+
+  </div>
+
+  <div class="star-divider">✦ ✦ ✦ ✦ ✦</div>
+
+  <div class="site-footer">
+    <a href="/">Home</a> &nbsp;|&nbsp; <a href="/login">Login</a> &nbsp;|&nbsp; <a href="/register">Register</a>
+    <br>
+    &copy; 1999&ndash;2025 xyzping
+  </div>
+
+</div>
+
+<script>
+var token = localStorage.getItem('wf_token');
+
+if (!token) {
+  document.getElementById('loadingArea').style.display = 'none';
+  document.getElementById('notLoggedIn').style.display = 'block';
+} else {
+  fetch('/api/profile', {
+    headers: { 'Authorization': 'Bearer ' + token }
+  })
+  .then(function(r) {
+    if (r.status === 401) {
+      localStorage.removeItem('wf_token');
+      localStorage.removeItem('wf_user');
+      throw new Error('session expired');
+    }
+    return r.json();
+  })
+  .then(function(user) {
+    document.getElementById('loadingArea').style.display = 'none';
+    document.getElementById('dashboard').style.display = 'block';
+
+    document.getElementById('greeting').textContent = 'Welcome back, ' + (user.username || 'member') + '!';
+    document.getElementById('userEmail').textContent = user.email || '';
+    loadLinks();
+    document.getElementById('infoUsername').textContent = user.username || '—';
+    document.getElementById('infoEmail').textContent = user.email || '—';
+    document.getElementById('infoStatus').textContent = user.is_active ? '✅ Active' : '⛔ Inactive';
+    document.getElementById('infoCreated').textContent = user.created_at ? new Date(user.created_at).toLocaleDateString() : '—';
+    document.getElementById('infoLastLogin').textContent = user.last_login ? new Date(user.last_login).toLocaleString() : 'First visit!';
+
+    // Construct acct: identity
+    var subject = 'acct:' + user.username + '@' + window.location.hostname;
+    document.getElementById('userSubject').textContent = subject;
+    window._userSubject = subject;
+  })
+  .catch(function(err) {
+    document.getElementById('loadingArea').style.display = 'none';
+    if (err.message === 'session expired') {
+      document.getElementById('notLoggedIn').style.display = 'block';
+    } else {
+      document.getElementById('notLoggedIn').style.display = 'block';
+    }
+  });
+}
+
+function lookupSelf() {
+  var subject = window._userSubject;
+  if (!subject) return;
+
+  fetch('/.well-known/webfinger?resource=' + encodeURIComponent(subject))
+    .then(function(r) {
+      if (!r.ok) throw new Error('not found');
+      return r.json();
+    })
+    .then(function(data) {
+      var html = '<pre style="font-size:11px;overflow:auto;background:#f0f0f0;padding:10px;border:2px inset #808080;">';
+      html += escapeHtml(JSON.stringify(data, null, 2));
+      html += '</pre>';
+
+      if (data.links && data.links.length) {
+        html += '<table class="link-table" style="margin-top:8px;">';
+        html += '<tr><th>Relation</th><th>URL</th></tr>';
+        data.links.forEach(function(link) {
+          html += '<tr><td>' + escapeHtml(link.rel || '') + '</td><td>';
+          if (link.href) html += '<a href="' + escapeHtml(link.href) + '" target="_blank">' + escapeHtml(link.href) + '</a>';
+          html += '</td></tr>';
+        });
+        html += '</table>';
+      }
+
+      document.getElementById('wfRecordContent').innerHTML = html;
+      document.getElementById('wfRecord').style.display = 'block';
+    })
+    .catch(function() {
+      document.getElementById('wfRecordContent').innerHTML =
+        '<p style="font-family:Arial;font-size:12px;color:#808080;">No xyzping record found yet. Your record will appear once set up by an administrator.</p>';
+      document.getElementById('wfRecord').style.display = 'block';
+    });
+}
+
+function copyIdentity() {
+  var subject = window._userSubject;
+  if (!subject) return;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(subject).then(function() {
+      alert('✅ Identity copied to clipboard: ' + subject);
+    });
+  } else {
+    prompt('Copy your identity:', subject);
+  }
+}
+
+function doLogout() {
+  var t = localStorage.getItem('wf_token');
+  localStorage.removeItem('wf_token');
+  localStorage.removeItem('wf_user');
+  if (t) {
+    fetch('/api/auth/logout', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + t }
+    }).catch(function() {});
+  }
+  window.location.href = '/';
+}
+
+// --- Link management ---
+function loadLinks() {
+  var t = localStorage.getItem('wf_token');
+  if (!t) return;
+  fetch('/api/profile/links', { headers: { 'Authorization': 'Bearer ' + t } })
+    .then(function(r) { return r.json(); })
+    .then(function(links) { renderLinks(links || []); })
+    .catch(function() { renderLinks([]); });
+}
+
+var VISIBILITY_LABELS = { public:'🌍 Public', registered:'👤 Registered', friends:'👫 Friends', private:'🔒 Private' };
+
+function renderLinks(links) {
+  var el = document.getElementById('linksList');
+  if (!links.length) {
+    el.innerHTML = '<p style="font-family:Arial;font-size:12px;color:#808080;">No links yet. Add your first social link below!</p>';
+    return;
+  }
+  var html = '<table class="link-table"><tr><th>Platform</th><th>URL</th><th>Visibility</th><th></th></tr>';
+  links.forEach(function(l) {
+    html += '<tr><td>' + escapeHtml(l.platform || l.rel || '') + '</td>';
+    html += '<td><a href="' + escapeHtml(l.href) + '" target="_blank">' + escapeHtml(l.href) + '</a></td>';
+    html += '<td>' + (VISIBILITY_LABELS[l.visibility] || l.visibility) + '</td>';
+    html += '<td><button class="retro-btn" style="padding:2px 8px;font-size:10px;" onclick="deleteLink(' + l.id + ')">✕ Del</button></td></tr>';
+  });
+  html += '</table>';
+  el.innerHTML = html;
+}
+
+var PLATFORM_TEMPLATES = {
+  instagram: { url: 'https://instagram.com/{u}',        rel: 'https://webfinger.net/rel/profile-page', label: 'Instagram username' },
+  bluesky:   { url: 'https://bsky.app/profile/{u}',     rel: 'https://webfinger.net/rel/profile-page', label: 'Bluesky handle (e.g. you.bsky.social)' },
+  x:         { url: 'https://x.com/{u}',                rel: 'https://webfinger.net/rel/profile-page', label: 'X username' },
+  linkedin:  { url: 'https://linkedin.com/in/{u}',      rel: 'https://webfinger.net/rel/profile-page', label: 'LinkedIn username' },
+  github:    { url: 'https://github.com/{u}',           rel: 'https://webfinger.net/rel/profile-page', label: 'GitHub username' },
+  facebook:  { url: 'https://facebook.com/{u}',         rel: 'https://webfinger.net/rel/profile-page', label: 'Facebook username' },
+  tiktok:    { url: 'https://tiktok.com/@{u}',          rel: 'https://webfinger.net/rel/profile-page', label: 'TikTok username' },
+  youtube:   { url: 'https://youtube.com/@{u}',         rel: 'https://webfinger.net/rel/profile-page', label: 'YouTube handle' },
+  website:   { url: '{u}',                              rel: 'http://webfinger.net/rel/profile-page',  label: 'Full URL (e.g. https://yoursite.com)' },
+  email:     { url: 'mailto:{u}',                       rel: 'mailto',                                 label: 'Email address' },
+  phone:     { url: 'tel:{u}',                          rel: 'tel',                                    label: 'Phone number' },
+  other:     { url: '{u}',                              rel: 'https://webfinger.net/rel/profile-page', label: 'Full URL' },
+};
+
+function platformChanged() {
+  var p = document.getElementById('newPlatform').value;
+  var tmpl = PLATFORM_TEMPLATES[p] || PLATFORM_TEMPLATES.other;
+  document.getElementById('usernameLabel').textContent = tmpl.label + ':';
+  document.getElementById('newUsername').value = '';
+  document.getElementById('newHref').value = '';
+}
+
+function usernameChanged() {
+  var p = document.getElementById('newPlatform').value;
+  var u = document.getElementById('newUsername').value.trim();
+  var tmpl = PLATFORM_TEMPLATES[p] || PLATFORM_TEMPLATES.other;
+  document.getElementById('newHref').value = u ? tmpl.url.replace('{u}', u) : '';
+}
+
+function addLink() {
+  var t = localStorage.getItem('wf_token');
+  if (!t) return;
+  var platform = document.getElementById('newPlatform').value;
+  var href = document.getElementById('newHref').value.trim();
+  var tmpl = PLATFORM_TEMPLATES[platform] || PLATFORM_TEMPLATES.other;
+  if (!href) {
+    var m = document.getElementById('linksMsg');
+    m.textContent = '⚠️ Please enter a username or URL.';
+    m.style.display = 'block';
+    return;
+  }
+  document.getElementById('linksMsg').style.display = 'none';
+  fetch('/api/profile/links', {
+    method: 'POST',
+    headers: { 'Authorization': 'Bearer ' + t, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      platform: platform,
+      rel: tmpl.rel,
+      href: href,
+      title: document.getElementById('newTitle').value.trim(),
+      visibility: document.getElementById('newVisibility').value
+    })
+  })
+  .then(function(r) { if (!r.ok) throw new Error('Failed to add link'); return r.json(); })
+  .then(function() {
+    document.getElementById('newUsername').value = '';
+    document.getElementById('newHref').value = '';
+    document.getElementById('newTitle').value = '';
+    loadLinks();
+  })
+  .catch(function(err) {
+    var m = document.getElementById('linksMsg');
+    m.textContent = '⚠️ ' + err.message;
+    m.style.display = 'block';
+  });
+}
+
+function deleteLink(id) {
+  if (!confirm('Delete this link?')) return;
+  var t = localStorage.getItem('wf_token');
+  fetch('/api/profile/links/' + id, {
+    method: 'DELETE',
+    headers: { 'Authorization': 'Bearer ' + t }
+  })
+  .then(function() { loadLinks(); })
+  .catch(function() {});
+}
+
+function escapeHtml(s) {
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
+
+</body>
+</html>

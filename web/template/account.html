@@ -2,76 +2,96 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Account: {{.Subject}}</title>
-  <style>
-    body {
-      background: radial-gradient(circle at top left, #1e1e2e, #2b2b44);
-      color: #f8f8f2;
-      font-family: 'Courier New', monospace;
-      padding: 40px;
-    }
-    h1 {
-      font-size: 2.5em;
-      color: #bd93f9;
-      margin-bottom: 0.5rem;
-    }
-    h2 {
-      color: #8be9fd;
-      margin-top: 1.5rem;
-      border-bottom: 1px solid #6272a4;
-      padding-bottom: 0.2em;
-    }
-    ul {
-      list-style: none;
-      padding-left: 0;
-    }
-    li {
-      padding: 6px 0;
-      border-bottom: 1px dotted #6272a4;
-    }
-    a {
-      color: #50fa7b;
-      text-decoration: none;
-    }
-    a:hover {
-      color: #ff79c6;
-    }
-    .footer {
-      margin-top: 60px;
-      font-size: 0.9em;
-      color: #6272a4;
-      text-align: center;
-    }
-  </style>
+  <title>{{.Subject}} - xyzping</title>
+  <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
-  <h1>{{.Subject}}</h1>
 
-  {{if .Aliases}}
-    <h2>Aliases</h2>
-    <ul>
-      {{range .Aliases}}<li>{{.}}</li>{{end}}
+<div class="page-wrapper">
+
+  <div class="site-header">
+    <div style="font-size:36px; margin-bottom:4px;">🤖</div>
+    <div class="logo-text">xyzping</div>
+    <div class="site-tagline">Identity Record</div>
+  </div>
+
+  <div class="navbar">
+    <a href="/">🏠 Home</a>
+    <a href="/register">📝 Register</a>
+    <a href="/login">🔑 Login</a>
+    <a href="/dashboard">👤 My Account</a>
+  </div>
+
+  <div class="acct-header">
+    📋 {{.Subject}}
+  </div>
+
+  <div class="content">
+
+    {{if .Aliases}}
+    <div class="section-title">🔗 Aliases</div>
+    <ul style="font-family:'Courier New',monospace;font-size:13px;padding-left:20px;margin:0 0 14px;">
+      {{range .Aliases}}
+      <li style="padding:3px 0;">
+        <a href="{{.}}" target="_blank" rel="noopener">{{.}}</a>
+      </li>
+      {{end}}
     </ul>
-  {{end}}
+    {{end}}
 
-  {{if .Links}}
-    <h2>Links</h2>
-    <ul>
+    {{if .Links}}
+    <div class="section-title">🌐 Links</div>
+    <table class="link-table">
+      <tr>
+        <th>Relation</th>
+        <th>Type</th>
+        <th>URL</th>
+      </tr>
       {{range .Links}}
-        <li><a href="{{.Href}}" target="_blank">{{.Rel}}</a></li>
+      <tr>
+        <td style="font-size:11px;word-break:break-all;">{{.Rel}}</td>
+        <td style="font-size:11px;">{{.Type}}</td>
+        <td>
+          {{if .Href}}
+          <a href="{{.Href}}" target="_blank" rel="noopener" style="font-size:12px;">{{.Href}}</a>
+          {{end}}
+        </td>
+      </tr>
       {{end}}
-    </ul>
-  {{end}}
+    </table>
+    {{end}}
 
-  {{if .Properties}}
-    <h2>Properties</h2>
-    <ul>
+    {{if .Properties}}
+    <div class="section-title" style="margin-top:14px;">🏷️ Properties</div>
+    <table class="link-table">
+      <tr>
+        <th>Property</th>
+        <th>Value</th>
+      </tr>
       {{range $key, $value := .Properties}}
-        <li><strong>{{$key}}</strong>: {{$value}}</li>
+      <tr>
+        <td style="font-size:11px;word-break:break-all;">{{$key}}</td>
+        <td style="font-size:12px;">{{$value}}</td>
+      </tr>
       {{end}}
-    </ul>
-  {{end}}
+    </table>
+    {{end}}
 
-  <div class="footer">&copy; 2025 WebFinger Retro</div>
+  </div>
+
+  <div class="content-gray" style="text-align:center;">
+    <a href="/" class="retro-btn" style="text-decoration:none;">⬅ Back to Search</a>
+  </div>
+
+  <div class="star-divider">✦ ✦ ✦ ✦ ✦</div>
+
+  <div class="site-footer">
+    <a href="/">Home</a> &nbsp;|&nbsp; <a href="/register">Register</a> &nbsp;|&nbsp; <a href="/login">Login</a>
+    <br>
+    &copy; 1999&ndash;2025 xyzping
+  </div>
+
+</div>
+
 </body>
 </html>

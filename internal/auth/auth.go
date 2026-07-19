@@ -46,15 +46,25 @@ type Session struct {
 }
 
 type User struct {
-	ID            int        `json:"id"`
-	Username      string     `json:"username"`
-	Email         string     `json:"email"`
-	PasswordHash  string     `json:"-"`
-	IsAdmin       bool       `json:"is_admin"`
-	IsActive      bool       `json:"is_active"`
-	EmailVerified bool       `json:"email_verified"`
-	CreatedAt     time.Time  `json:"created_at"`
-	LastLogin     *time.Time `json:"last_login,omitempty"`
+	ID                 int        `json:"id"`
+	Username           string     `json:"username"`
+	Domain             string     `json:"domain"`
+	Subject            string     `json:"subject"`
+	Email              string     `json:"email"`
+	PasswordHash       string     `json:"-"`
+	DisplayName        string     `json:"display_name,omitempty"`
+	Bio                string     `json:"bio,omitempty"`
+	Website            string     `json:"website,omitempty"`
+	Location           string     `json:"location,omitempty"`
+	LocationVisibility string     `json:"location_visibility,omitempty"`
+	AvatarURL          string     `json:"avatar_url,omitempty"`
+	Status             string     `json:"status,omitempty"`
+	StatusVisibility   string     `json:"status_visibility,omitempty"`
+	IsAdmin            bool       `json:"is_admin"`
+	IsActive           bool       `json:"is_active"`
+	EmailVerified      bool       `json:"email_verified"`
+	CreatedAt          time.Time  `json:"created_at"`
+	LastLogin          *time.Time `json:"last_login,omitempty"`
 }
 
 // NewAuthService creates a new authentication service

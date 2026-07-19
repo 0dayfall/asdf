@@ -76,26 +76,26 @@ func CORS(allowedOrigins []string, allowCredentials bool) func(http.Handler) htt
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			origin := r.Header.Get("Origin")
 
-			// Check if origin is allowed
-			allowed := false
-			for _, allowedOrigin := range allowedOrigins {
-				if allowedOrigin == "*" || allowedOrigin == origin {
-					allowed = true
-					break
+			originAllowed := false
+			if origin != "" {
+				for _, allowedOrigin := range allowedOrigins {
+					if allowedOrigin == "*" || allowedOrigin == origin {
+						originAllowed = true
+						break
+					}
 				}
 			}
 
-			if allowed {
+			if originAllowed {
 				w.Header().Set("Access-Control-Allow-Origin", origin)
+				// Only send credentials header when a specific origin matched, never with wildcard.
+				if allowCredentials && origin != "" {
+					w.Header().Set("Access-Control-Allow-Credentials", "true")
+				}
+				w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+				w.Header().Set("Access-Control-Allow-Headers", "Accept, Authorization, Content-Type, X-CSRF-Token")
+				w.Header().Set("Access-Control-Max-Age", "86400")
 			}
-
-			if allowCredentials {
-				w.Header().Set("Access-Control-Allow-Credentials", "true")
-			}
-
-			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-			w.Header().Set("Access-Control-Allow-Headers", "Accept, Authorization, Content-Type, X-CSRF-Token")
-			w.Header().Set("Access-Control-Max-Age", "86400")
 
 			if r.Method == "OPTIONS" {
 				w.WriteHeader(http.StatusOK)

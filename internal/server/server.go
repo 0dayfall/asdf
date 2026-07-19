@@ -77,15 +77,36 @@ func Start() error {
 	webfingerStore := store.NewPostgresStore(pool)
 	userStore := auth.NewPostgresUserStore(pool)
 	sessionStore := auth.NewPostgresSessionStore(pool)
+	linkStore := store.NewPostgresLinkStore(pool)
+	connStore := store.NewPostgresConnectionStore(pool)
+	oauthStore := auth.NewPostgresOAuthStore(pool)
 
 	// Initialize authentication service
 	tokenExpiry := time.Duration(cfg.Auth.TokenExpiryHours) * time.Hour
 	authService := auth.NewAuthService(cfg.Auth.JWTSecret, tokenExpiry, sessionStore)
 
+	// Initialize OAuth service
+	oauthService := auth.NewOAuthService(
+		cfg.OAuth.BaseURL,
+		cfg.OAuth.FacebookClientID, cfg.OAuth.FacebookSecret,
+		cfg.OAuth.InstagramClientID, cfg.OAuth.InstagramSecret,
+		cfg.OAuth.XClientID, cfg.OAuth.XSecret,
+	)
+
 	// Initialize handlers
 	rest.LoadTemplates()
-	htmlHandler := &rest.HTMLHandler{Data: webfingerStore, Cache: redisCache}
-	authHandler := rest.NewAuthHandler(authService, userStore)
+	htmlHandler := &rest.HTMLHandler{
+		Data:      webfingerStore,
+		Cache:     redisCache,
+		Links:     linkStore,
+		Conns:     connStore,
+		Users:     userStore,
+		AuthSvc:   authService,
+	}
+	authHandler := rest.NewAuthHandler(authService, userStore, cfg.Server.Domain)
+	linksHandler := rest.NewLinksHandler(linkStore)
+	connsHandler := rest.NewConnectionsHandler(connStore, userStore)
+	oauthHandler := rest.NewOAuthHandler(oauthService, oauthStore, userStore, authService, redisCache, cfg.Server.Domain)
 
 	// Setup middleware
 	rateLimiter := middleware.NewRateLimiter(cfg.Security.RateLimitRPS, cfg.Security.RateLimitBurst)
@@ -108,17 +129,34 @@ func Start() error {
 	mux.HandleFunc("/api/auth/logout", authHandler.HandleLogout)
 	mux.HandleFunc("/api/auth/refresh", authHandler.HandleRefreshToken)
 
-	// Protected API endpoints
-	protectedMux := http.NewServeMux()
-	protectedMux.HandleFunc("/api/profile", authHandler.HandleProfile)
-	protectedMux.HandleFunc("/api/search", htmlHandler.HandleSearchAPI)
+	// Protected API endpoints — wrapped with auth middleware
+	mux.Handle("/api/profile", authHandler.AuthMiddleware(http.HandlerFunc(authHandler.HandleProfile)))
+	mux.Handle("/api/search", authHandler.AuthMiddleware(http.HandlerFunc(htmlHandler.HandleSearchAPI)))
+
+	// Link management
+	mux.Handle("/api/profile/links", authHandler.AuthMiddleware(http.HandlerFunc(linksHandler.HandleLinks)))
+	mux.Handle("/api/profile/links/{id}", authHandler.AuthMiddleware(http.HandlerFunc(linksHandler.HandleLinkByID)))
+
+	// Connections / friends
+	mux.Handle("/api/connections", authHandler.AuthMiddleware(http.HandlerFunc(connsHandler.HandleConnections)))
+	mux.Handle("/api/connections/pending", authHandler.AuthMiddleware(http.HandlerFunc(connsHandler.HandlePending)))
+	mux.Handle("/api/connections/{id}", authHandler.AuthMiddleware(http.HandlerFunc(connsHandler.HandleConnectionByID)))
+
+	// OAuth flows (public — redirect + callback)
+	mux.HandleFunc("/auth/{provider}", oauthHandler.HandleOAuthRedirect)
+	mux.HandleFunc("/auth/{provider}/callback", oauthHandler.HandleOAuthCallback)
+	mux.HandleFunc("/auth/bluesky", oauthHandler.HandleBlueskyLogin)
 
 	// Admin endpoints (TODO: Add admin endpoints when needed)
 
 	// WebFinger endpoint (public)
 	mux.HandleFunc(wellKnownWebFinger, htmlHandler.HandleWebFinger)
 
-	// HTML frontend
+	// HTML pages
+	mux.HandleFunc("/login", htmlHandler.LoginPageHandler)
+	mux.HandleFunc("/register", htmlHandler.RegisterPageHandler)
+	mux.HandleFunc("/dashboard", htmlHandler.DashboardPageHandler)
+	mux.HandleFunc("/connections", htmlHandler.ConnectionsPageHandler)
 	mux.Handle("/", htmlHandler)
 
 	// Apply middleware chain
@@ -136,6 +174,8 @@ func Start() error {
 	if cfg.Security.ForceHTTPS && cfg.IsProductionEnv() {
 		handler = middleware.HTTPSRedirect(true)(handler)
 	}
+
+	handler = http.MaxBytesHandler(handler, 1<<20) // 1 MB request body limit
 
 	// Start background tasks
 	ctx := context.Background()

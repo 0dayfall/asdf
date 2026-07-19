@@ -1,23 +1,19 @@
-# Start from a Debian-based image with Go installed
-FROM golang:latest
-
-# Set the working directory inside the container
+# Build stage
+FROM golang:1.25-alpine AS builder
 WORKDIR /app
-
-# Copy the local package files to the container's workspace
+COPY go.mod go.sum ./
+RUN go mod download
 COPY . .
-
-# Copy the data file to the container's workspace
-COPY ./data/data.json /data/data.json
-
-# Build the Go app
 RUN go build -o webfinger-server ./cmd/webfinger-server
 
-# Expose env variables (this is for documentation purposes)
-EXPOSE $PORT
-EXPOSE $SSL_CERT_PATH
-EXPOSE $SSL_KEY_PATH
-EXPOSE $JWT_SECRET
-
-# Run the binary program produced by `go install`
-CMD ["/app/webfinger-server"]   
+# Runtime stage
+FROM alpine:3.19
+RUN apk add --no-cache ca-certificates curl
+WORKDIR /app
+COPY --from=builder /app/webfinger-server .
+COPY --from=builder /app/web ./web
+COPY --from=builder /app/data ./data
+COPY --from=builder /app/config.yaml .
+COPY --from=builder /app/internal/migrations ./internal/migrations
+EXPOSE 8080 9090
+CMD ["/app/webfinger-server"]

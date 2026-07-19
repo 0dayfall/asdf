@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Connections - xyzping</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+
+<div class="page-wrapper">
+
+  <div class="site-header">
+    <div style="font-size:36px; margin-bottom:4px;">👫</div>
+    <div class="logo-text">xyzping</div>
+    <div class="site-tagline">My Connections</div>
+  </div>
+
+  <div class="announcement">
+    <span class="announcement-inner">
+      &nbsp;&nbsp;&nbsp;
+      👫 Connect with friends to share private links &amp; contact info!
+      &nbsp;&nbsp;&nbsp;
+    </span>
+  </div>
+
+  <div class="navbar">
+    <a href="/">🏠 Home</a>
+    <a href="/dashboard">👤 Dashboard</a>
+    <a href="/connections">👫 Connections</a>
+    <a href="/login">🔑 Login</a>
+  </div>
+
+  <div id="notLoggedIn" class="content" style="display:none;text-align:center;">
+    <p style="font-family:Arial;font-size:14px;">⚠️ You must be logged in!</p>
+    <a href="/login" class="retro-btn retro-btn-primary" style="display:inline-block;text-decoration:none;padding:6px 16px;">🔑 Login</a>
+  </div>
+
+  <div id="mainArea" style="display:none;">
+
+    <!-- Add connection -->
+    <div class="content">
+      <div class="section-title">🔍 Find &amp; Add a Connection</div>
+      <div id="addMsg" class="msg-error" style="display:none;"></div>
+      <div id="addSuccess" class="msg-success" style="display:none;"></div>
+      <div style="display:flex;gap:8px;align-items:flex-end;">
+        <div style="flex:1;">
+          <label for="searchUser" style="font-family:Arial;font-size:12px;">Username:</label>
+          <input type="text" id="searchUser" placeholder="username" style="width:100%;box-sizing:border-box;">
+        </div>
+        <button class="retro-btn retro-btn-primary" onclick="sendRequest()" style="white-space:nowrap;">
+          ➕ Connect
+        </button>
+      </div>
+    </div>
+
+    <!-- Pending requests -->
+    <div class="content">
+      <div class="section-title">📬 Pending Requests</div>
+      <div id="pendingList">
+        <p style="font-family:Arial;font-size:12px;color:#808080;">Loading...</p>
+      </div>
+    </div>
+
+    <!-- Accepted connections -->
+    <div class="content">
+      <div class="section-title">✅ My Connections</div>
+      <div id="connectionsList">
+        <p style="font-family:Arial;font-size:12px;color:#808080;">Loading...</p>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="star-divider">✦ ✦ ✦ ✦ ✦</div>
+
+  <div class="site-footer">
+    <a href="/">Home</a> &nbsp;|&nbsp; <a href="/dashboard">Dashboard</a>
+    <br>
+    &copy; 1999&ndash;2025 xyzping
+  </div>
+
+</div>
+
+<script>
+var token = localStorage.getItem('wf_token');
+if (!token) {
+  document.getElementById('notLoggedIn').style.display = 'block';
+} else {
+  document.getElementById('mainArea').style.display = 'block';
+  loadPending();
+  loadConnections();
+}
+
+function loadPending() {
+  fetch('/api/connections/pending', { headers: { 'Authorization': 'Bearer ' + token } })
+    .then(function(r) { return r.json(); })
+    .then(function(list) { renderPending(list || []); })
+    .catch(function() { renderPending([]); });
+}
+
+function loadConnections() {
+  fetch('/api/connections', { headers: { 'Authorization': 'Bearer ' + token } })
+    .then(function(r) { return r.json(); })
+    .then(function(list) { renderConnections(list || []); })
+    .catch(function() { renderConnections([]); });
+}
+
+function renderPending(list) {
+  var el = document.getElementById('pendingList');
+  if (!list.length) {
+    el.innerHTML = '<p style="font-family:Arial;font-size:12px;color:#808080;">No pending requests.</p>';
+    return;
+  }
+  var html = '<table class="link-table"><tr><th>From</th><th>Actions</th></tr>';
+  list.forEach(function(c) {
+    html += '<tr><td>' + escapeHtml(c.requester_username || c.requester_id) + '</td>';
+    html += '<td>';
+    html += '<button class="retro-btn" style="padding:2px 8px;font-size:10px;" onclick="acceptRequest(' + c.requester_id + ')">✅ Accept</button> ';
+    html += '<button class="retro-btn" style="padding:2px 8px;font-size:10px;background:#ff8080;" onclick="declineRequest(' + c.requester_id + ')">✕ Decline</button>';
+    html += '</td></tr>';
+  });
+  html += '</table>';
+  el.innerHTML = html;
+}
+
+function renderConnections(list) {
+  var el = document.getElementById('connectionsList');
+  if (!list.length) {
+    el.innerHTML = '<p style="font-family:Arial;font-size:12px;color:#808080;">No connections yet. Add some friends above!</p>';
+    return;
+  }
+  var meId = null;
+  var html = '<table class="link-table"><tr><th>Name</th><th>Since</th><th></th></tr>';
+  list.forEach(function(c) {
+    var name = escapeHtml(c.requester_username || '') + ' / ' + escapeHtml(c.addressee_username || '');
+    var since = c.created_at ? new Date(c.created_at).toLocaleDateString() : '—';
+    var otherId = c.requester_id;
+    html += '<tr><td>' + name + '</td><td>' + since + '</td>';
+    html += '<td><button class="retro-btn" style="padding:2px 8px;font-size:10px;background:#ff8080;" onclick="removeConnection(' + otherId + ')">✕ Remove</button></td></tr>';
+  });
+  html += '</table>';
+  el.innerHTML = html;
+}
+
+function sendRequest() {
+  var username = document.getElementById('searchUser').value.trim();
+  var addMsg = document.getElementById('addMsg');
+  var addSuccess = document.getElementById('addSuccess');
+  addMsg.style.display = 'none';
+  addSuccess.style.display = 'none';
+  if (!username) { addMsg.textContent = '⚠️ Enter a username.'; addMsg.style.display = 'block'; return; }
+  fetch('/api/connections', {
+    method: 'POST',
+    headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username: username })
+  })
+  .then(function(r) { if (!r.ok) return r.text().then(function(t) { throw new Error(t); }); return r.json(); })
+  .then(function() {
+    addSuccess.textContent = '✅ Connection request sent to ' + username + '!';
+    addSuccess.style.display = 'block';
+    document.getElementById('searchUser').value = '';
+    loadConnections();
+  })
+  .catch(function(err) {
+    addMsg.textContent = '⚠️ ' + err.message;
+    addMsg.style.display = 'block';
+  });
+}
+
+function acceptRequest(requesterID) {
+  fetch('/api/connections/' + requesterID, {
+    method: 'PUT',
+    headers: { 'Authorization': 'Bearer ' + token }
+  })
+  .then(function() { loadPending(); loadConnections(); })
+  .catch(function() {});
+}
+
+function declineRequest(requesterID) {
+  fetch('/api/connections/' + requesterID, {
+    method: 'DELETE',
+    headers: { 'Authorization': 'Bearer ' + token }
+  })
+  .then(function() { loadPending(); })
+  .catch(function() {});
+}
+
+function removeConnection(otherID) {
+  if (!confirm('Remove this connection?')) return;
+  fetch('/api/connections/' + otherID, {
+    method: 'DELETE',
+    headers: { 'Authorization': 'Bearer ' + token }
+  })
+  .then(function() { loadConnections(); })
+  .catch(function() {});
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
+
+</body>
+</html>

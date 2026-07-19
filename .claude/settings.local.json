@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(go build *)",
+      "Bash(go test *)",
+      "Bash(docker compose up *)",
+      "Bash(curl -s http://localhost:8080/health)",
+      "Bash(curl -s \"http://localhost:8080/.well-known/webfinger?resource=acct:example@example.com\")",
+      "Bash(docker compose ps *)",
+      "Bash(docker compose *)",
+      "Bash(curl -s \"http://localhost:8080/.well-known/webfinger?resource=acct:alice@localhost\")",
+      "Bash(python3 -m json.tool)",
+      "Bash(go get *)",
+      "Bash(go vet *)",
+      "Bash(curl -s http://localhost:8080/)"
+    ]
+  }
+}
