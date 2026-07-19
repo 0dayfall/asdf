@@ -12,6 +12,7 @@ import (
 type AuthHandler struct {
 	authService *auth.AuthService
 	userStore   auth.UserStore
+	domain      string
 }
 
 type LoginRequest struct {
@@ -37,10 +38,11 @@ type ErrorResponse struct {
 }
 
 // NewAuthHandler creates a new authentication handler
-func NewAuthHandler(authService *auth.AuthService, userStore auth.UserStore) *AuthHandler {
+func NewAuthHandler(authService *auth.AuthService, userStore auth.UserStore, domain string) *AuthHandler {
 	return &AuthHandler{
 		authService: authService,
 		userStore:   userStore,
+		domain:      domain,
 	}
 }
 
@@ -175,6 +177,7 @@ func (h *AuthHandler) HandleRegister(w http.ResponseWriter, r *http.Request) {
 		Username: req.Username,
 		Email:    req.Email,
 		Password: passwordHash,
+		Domain:   h.domain,
 	}
 
 	user, err := h.userStore.CreateUser(r.Context(), createReq)
@@ -240,7 +243,7 @@ func (h *AuthHandler) HandleRefreshToken(w http.ResponseWriter, r *http.Request)
 
 	newToken, err := h.authService.RefreshToken(r.Context(), oldToken, ipAddress, userAgent)
 	if err != nil {
-		h.writeError(w, http.StatusUnauthorized, "Invalid or expired token", err.Error())
+		h.writeError(w, http.StatusUnauthorized, "Invalid or expired token", "")
 		return
 	}
 

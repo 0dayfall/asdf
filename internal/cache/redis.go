@@ -18,6 +18,10 @@ type Cache interface {
 	SetSearchResults(ctx context.Context, query string, results []string, expiry time.Duration) error
 	InvalidateUserCache(ctx context.Context, subject string) error
 	GetStats(ctx context.Context) (*CacheStats, error)
+	// OAuth state (short-lived key/value)
+	SetOAuthState(ctx context.Context, key string, value []byte, expiry time.Duration) error
+	GetOAuthState(ctx context.Context, key string) ([]byte, error)
+	DeleteOAuthState(ctx context.Context, key string) error
 	Close() error
 }
 
@@ -252,6 +256,22 @@ func (c *RedisCache) webfingerKey(subject string) string {
 // searchKey generates a cache key for search results
 func (c *RedisCache) searchKey(query string) string {
 	return c.prefix + "search:" + query
+}
+
+func (c *RedisCache) SetOAuthState(ctx context.Context, key string, value []byte, expiry time.Duration) error {
+	return c.client.Set(ctx, c.prefix+"oauth:"+key, value, expiry).Err()
+}
+
+func (c *RedisCache) GetOAuthState(ctx context.Context, key string) ([]byte, error) {
+	data, err := c.client.Get(ctx, c.prefix+"oauth:"+key).Bytes()
+	if err == redis.Nil {
+		return nil, nil
+	}
+	return data, err
+}
+
+func (c *RedisCache) DeleteOAuthState(ctx context.Context, key string) error {
+	return c.client.Del(ctx, c.prefix+"oauth:"+key).Err()
 }
 
 // Cleanup removes expired and unused cache entries

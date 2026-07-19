@@ -30,3 +30,7 @@ go.work
 # Secrets and local artifacts
 .env
 coverage*.html
+
+# Local editor/agent settings and trash
+.claude/
+_to_delete/

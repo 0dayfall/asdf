@@ -1,6 +1,7 @@
 package rest
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"log"
@@ -63,6 +64,7 @@ func (wfh *WebFingerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// RFC 7033 section 4.3: when one or more rel parameters are present,
 	// filter the links to those matching the requested relation types.
+	// Filtering copies the JRD so cached/stored records stay intact.
 	if rels := r.URL.Query()["rel"]; len(rels) > 0 {
 		jrd = filterRels(jrd, rels)
 	}
@@ -115,8 +117,16 @@ func filterRels(jrd *types.JRD, rels []string) *types.JRD {
 
 func writeResponse(w http.ResponseWriter, content *types.JRD) {
 	w.Header().Set(ContentType, ContentTypeJRD)
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(content); err != nil {
+		log.Printf("Error encoding JRD: %v", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
 	w.WriteHeader(http.StatusOK)
-	if err := json.NewEncoder(w).Encode(content); err != nil {
-		log.Printf("Error writing body: %v", err)
+	if _, err := buf.WriteTo(w); err != nil {
+		log.Printf("Error writing response: %v", err)
 	}
 }

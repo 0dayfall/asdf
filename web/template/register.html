@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Register FREE! - xyzping</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+
+<div class="page-wrapper">
+
+  <div class="site-header">
+    <div style="font-size:36px; margin-bottom:4px;">📝</div>
+    <div class="logo-text">xyzping</div>
+    <div class="site-tagline">Create Your FREE Account Today!</div>
+  </div>
+
+  <div class="announcement">
+    <span class="announcement-inner">
+      &nbsp;&nbsp;&nbsp;
+      🎉 Registration is 100% FREE! &nbsp;&nbsp;|&nbsp;&nbsp;
+      🌐 Get your own acct: identity on the World Wide Web! &nbsp;&nbsp;|&nbsp;&nbsp;
+      ✨ No credit card required!
+      &nbsp;&nbsp;&nbsp;
+    </span>
+  </div>
+
+  <div class="navbar">
+    <a href="/">🏠 Home</a>
+    <a href="/register">📝 Register</a>
+    <a href="/login">🔑 Login</a>
+    <a href="/dashboard">👤 My Account</a>
+  </div>
+
+  <div class="content" style="max-width:400px; margin:20px auto;">
+
+    <div class="section-title">📝 Create Your FREE Account!</div>
+
+    <p style="font-family:Arial;font-size:12px;margin:0 0 12px;">
+      Join <strong>xyzping</strong> today and claim your own identity on the Internet!
+      Your account will be discoverable by anyone using xyzping.
+    </p>
+
+    <div id="msg-error" class="msg-error"></div>
+    <div id="msg-success" class="msg-success"></div>
+
+    <form class="retro-form" id="registerForm" onsubmit="doRegister(event)">
+
+      <label for="username">
+        Username: <span style="color:#800000;font-size:11px;">(letters and numbers only, 3&ndash;50 chars)</span>
+      </label>
+      <input type="text" id="username" name="username" placeholder="cooluser99" required
+             minlength="3" maxlength="50" autocomplete="username">
+
+      <label for="email">E-Mail Address:</label>
+      <input type="email" id="email" name="email" placeholder="you@example.com" required
+             autocomplete="email">
+
+      <label for="password">
+        Password: <span style="color:#800000;font-size:11px;">(minimum 8 characters)</span>
+      </label>
+      <input type="password" id="password" name="password" placeholder="••••••••" required
+             minlength="8" autocomplete="new-password">
+
+      <label for="confirm">Confirm Password:</label>
+      <input type="password" id="confirm" name="confirm" placeholder="••••••••" required
+             autocomplete="new-password">
+
+      <hr class="retro">
+
+      <div style="font-family:Arial;font-size:11px;color:#808080;margin-bottom:10px;">
+        By registering you agree to our
+        <a href="#">Terms of Service</a> and
+        <a href="#">Privacy Policy</a>.
+        Your xyzping profile will be publicly discoverable.
+      </div>
+
+      <div style="display:flex; gap:8px; align-items:center;">
+        <button type="submit" class="retro-btn retro-btn-primary" id="submitBtn">
+          🚀 JOIN NOW!
+        </button>
+        <span style="font-family:Arial;font-size:12px;">
+          Already a member? <a href="/login">Login here!</a>
+        </span>
+      </div>
+
+    </form>
+
+  </div>
+
+  <div class="content-gray">
+    <div class="section-title">🌟 Benefits of Registering!</div>
+    <table style="width:100%;font-family:Arial;font-size:12px;border-collapse:collapse;">
+      <tr>
+        <td style="padding:4px;">✅ Your own <code>acct:you@domain</code> identity</td>
+        <td style="padding:4px;">✅ Discoverable via WebFinger protocol</td>
+      </tr>
+      <tr>
+        <td style="padding:4px;">✅ Free forever!</td>
+        <td style="padding:4px;">✅ RFC 7033 compliant record</td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="star-divider">✦ ✦ ✦ ✦ ✦</div>
+
+  <div class="badges">
+    <span class="badge">🌐 Best viewed in Netscape Navigator 4.0</span>
+    <span class="badge">💾 FREE Registration!</span>
+  </div>
+
+  <div class="site-footer">
+    <a href="/">Home</a> &nbsp;|&nbsp; <a href="/login">Login</a>
+    <br>
+    &copy; 1999&ndash;2025 xyzping
+  </div>
+
+</div>
+
+<script>
+function doRegister(e) {
+  e.preventDefault();
+  var username = document.getElementById('username').value.trim();
+  var email    = document.getElementById('email').value.trim();
+  var password = document.getElementById('password').value;
+  var confirm  = document.getElementById('confirm').value;
+  var submitBtn = document.getElementById('submitBtn');
+  var msgError   = document.getElementById('msg-error');
+  var msgSuccess = document.getElementById('msg-success');
+
+  msgError.style.display = 'none';
+  msgSuccess.style.display = 'none';
+
+  if (password !== confirm) {
+    msgError.textContent = '⚠️ Passwords do not match!';
+    msgError.style.display = 'block';
+    return;
+  }
+
+  submitBtn.disabled = true;
+  submitBtn.textContent = '⏳ Creating account...';
+
+  fetch('/api/auth/register', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username: username, email: email, password: password })
+  })
+  .then(function(r) { return r.json().then(function(d) { return { ok: r.ok, status: r.status, data: d }; }); })
+  .then(function(res) {
+    if (!res.ok) {
+      throw new Error(res.data.error || 'Registration failed');
+    }
+    msgSuccess.textContent = '🎉 Account created! Redirecting to login...';
+    msgSuccess.style.display = 'block';
+    setTimeout(function() { window.location.href = '/login'; }, 1500);
+  })
+  .catch(function(err) {
+    msgError.textContent = '⚠️ ' + (err.message || 'Registration failed. Please try again.');
+    msgError.style.display = 'block';
+    submitBtn.disabled = false;
+    submitBtn.textContent = '🚀 JOIN NOW!';
+  });
+}
+</script>
+
+</body>
+</html>

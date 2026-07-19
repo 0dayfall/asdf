@@ -2,60 +2,177 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Login - WebFinger Retro</title>
-  <style>
-    body {
-      background: #282a36;
-      color: #f8f8f2;
-      font-family: 'Courier New', monospace;
-      display: flex;
-      height: 100vh;
-      align-items: center;
-      justify-content: center;
-    }
-    .login-box {
-      background: #44475a;
-      padding: 30px;
-      border: 2px solid #6272a4;
-      border-radius: 8px;
-      width: 300px;
-    }
-    .login-box h2 {
-      color: #ffb86c;
-      margin-bottom: 1rem;
-      text-align: center;
-    }
-    .login-box input {
-      width: 100%;
-      padding: 10px;
-      margin-bottom: 12px;
-      border: 1px solid #6272a4;
-      border-radius: 4px;
-      background: #282a36;
-      color: #f8f8f2;
-    }
-    .login-box button {
-      width: 100%;
-      padding: 10px;
-      background: #50fa7b;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 1em;
-    }
-    .login-box button:hover {
-      background: #ff79c6;
-    }
-  </style>
+  <title>Login - xyzping</title>
+  <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
-  <div class="login-box">
-    <h2>Login</h2>
-    <form action="/login" method="POST">
-      <input type="text" name="username" placeholder="Username" required>
-      <input type="password" name="password" placeholder="Password" required>
-      <button type="submit">Log In</button>
-    </form>
+
+<div class="page-wrapper">
+
+  <div class="site-header">
+    <div style="font-size:36px; margin-bottom:4px;">🔑</div>
+    <div class="logo-text">xyzping</div>
+    <div class="site-tagline">Member Login Area</div>
   </div>
+
+  <div class="announcement">
+    <span class="announcement-inner">
+      &nbsp;&nbsp;&nbsp;
+      🔒 Secure Login &mdash; Your password is encrypted with military-grade technology!
+      &nbsp;&nbsp;&nbsp;
+    </span>
+  </div>
+
+  <div class="navbar">
+    <a href="/">🏠 Home</a>
+    <a href="/register">📝 Register</a>
+    <a href="/login">🔑 Login</a>
+    <a href="/dashboard">👤 My Account</a>
+  </div>
+
+  <div class="content" style="max-width:360px; margin:20px auto;">
+
+    <div class="section-title">🔑 Member Login</div>
+
+    <div id="msg-error" class="msg-error"></div>
+    <div id="msg-success" class="msg-success"></div>
+
+    <form class="retro-form" id="loginForm" onsubmit="doLogin(event)">
+
+      <label for="username">Username or E-Mail Address:</label>
+      <input type="text" id="username" name="username" placeholder="user@example.com" required autocomplete="username">
+
+      <label for="password">Password:</label>
+      <input type="password" id="password" name="password" placeholder="••••••••" required autocomplete="current-password">
+
+      <hr class="retro">
+
+      <div style="display:flex; gap:8px; align-items:center; justify-content:space-between;">
+        <button type="submit" class="retro-btn retro-btn-primary" id="submitBtn">
+          ✅ SIGN IN!
+        </button>
+        <a href="/register" style="font-family:Arial;font-size:12px;">
+          Not a member? Register FREE!
+        </a>
+      </div>
+
+    </form>
+
+    <div class="star-divider" style="margin:12px 0;">— OR LOGIN WITH —</div>
+
+    <div style="display:flex; flex-direction:column; gap:8px;">
+      <button class="retro-btn" onclick="showBluesky()" style="background:#0085ff;color:#fff;border-color:#0060cc;">
+        🦋 Continue with Bluesky
+      </button>
+    </div>
+
+    <!-- Bluesky app-password panel -->
+    <div id="bskyPanel" style="display:none; margin-top:12px;">
+      <div class="section-title" style="font-size:12px;">🦋 Bluesky Login</div>
+      <div id="bskyError" class="msg-error"></div>
+      <label for="bskyHandle">Handle (e.g. you.bsky.social):</label>
+      <input type="text" id="bskyHandle" placeholder="you.bsky.social">
+      <label for="bskyPass">App Password:</label>
+      <input type="password" id="bskyPass" placeholder="xxxx-xxxx-xxxx-xxxx">
+      <button class="retro-btn retro-btn-primary" onclick="doBluesky()" style="margin-top:6px;">
+        🦋 Sign in with Bluesky
+      </button>
+    </div>
+
+  </div>
+
+  <div class="star-divider">✦ ✦ ✦ ✦ ✦</div>
+
+  <div class="badges">
+    <span class="badge">🔒 128-bit Encryption</span>
+    <span class="badge">✅ RFC 7033 Compliant</span>
+  </div>
+
+  <div class="site-footer">
+    <a href="/">Home</a> &nbsp;|&nbsp; <a href="/register">Register</a>
+    <br>
+    &copy; 1999&ndash;2025 xyzping
+  </div>
+
+</div>
+
+<script>
+// Pick up token from OAuth callback URL fragment (#token=...)
+(function() {
+  var m = window.location.hash.match(/[#&]token=([^&]*)/);
+  if (m) {
+    localStorage.setItem('wf_token', decodeURIComponent(m[1]));
+    window.location.replace('/dashboard');
+  }
+})();
+
+function showBluesky() {
+  var p = document.getElementById('bskyPanel');
+  p.style.display = p.style.display === 'none' ? 'block' : 'none';
+}
+
+function doBluesky() {
+  var handle = document.getElementById('bskyHandle').value.trim();
+  var pass   = document.getElementById('bskyPass').value;
+  var errEl  = document.getElementById('bskyError');
+  errEl.style.display = 'none';
+  if (!handle || !pass) { errEl.textContent = '⚠️ Handle and app password required.'; errEl.style.display = 'block'; return; }
+  fetch('/auth/bluesky', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ handle: handle, app_password: pass })
+  })
+  .then(function(r) { return r.json().then(function(d) { return { ok: r.ok, data: d }; }); })
+  .then(function(res) {
+    if (!res.ok) throw new Error(res.data.error || 'Login failed');
+    localStorage.setItem('wf_token', res.data.token);
+    window.location.href = '/dashboard';
+  })
+  .catch(function(err) {
+    errEl.textContent = '⚠️ ' + (err.message || 'Login failed');
+    errEl.style.display = 'block';
+  });
+}
+
+function doLogin(e) {
+  e.preventDefault();
+  var username = document.getElementById('username').value.trim();
+  var password = document.getElementById('password').value;
+  var submitBtn = document.getElementById('submitBtn');
+  var msgError = document.getElementById('msg-error');
+  var msgSuccess = document.getElementById('msg-success');
+
+  msgError.style.display = 'none';
+  msgSuccess.style.display = 'none';
+  submitBtn.disabled = true;
+  submitBtn.textContent = '⏳ Signing in...';
+
+  fetch('/api/auth/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username: username, password: password })
+  })
+  .then(function(r) { return r.json().then(function(d) { return { ok: r.ok, data: d }; }); })
+  .then(function(res) {
+    if (!res.ok) {
+      throw new Error(res.data.error || 'Login failed');
+    }
+    if (res.data.token) {
+      localStorage.setItem('wf_token', res.data.token);
+      localStorage.setItem('wf_user', JSON.stringify(res.data.user || {}));
+    }
+    msgSuccess.textContent = '✅ Login successful! Redirecting...';
+    msgSuccess.style.display = 'block';
+    setTimeout(function() { window.location.href = '/dashboard'; }, 800);
+  })
+  .catch(function(err) {
+    msgError.textContent = '⚠️ ' + (err.message || 'Login failed. Please try again.');
+    msgError.style.display = 'block';
+    submitBtn.disabled = false;
+    submitBtn.textContent = '✅ SIGN IN!';
+  });
+}
+</script>
+
 </body>
 </html>

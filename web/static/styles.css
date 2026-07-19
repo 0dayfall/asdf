@@ -1,125 +1,387 @@
-:root {
-  --bg: #f5f6f7;
-  --text: #1c1c1e;
-  --accent: #007aff;
-  --border: #ccc;
-  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-}
+/* ===== WEBFINGER RETRO STYLES v1.0 ===== */
+/* Best viewed in Netscape Navigator 4.0   */
 
 body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: var(--font);
+  background-color: #008080;
+  background-image: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 2px,
+    rgba(0,0,0,0.04) 2px,
+    rgba(0,0,0,0.04) 4px
+  );
+  font-family: "Times New Roman", Times, serif;
   margin: 0;
-  padding: 2em;
-  display: flex;
-  justify-content: center;
+  padding: 12px;
+  color: #000000;
 }
 
-.container {
+.page-wrapper {
+  width: 640px;
+  margin: 0 auto;
+  background: #c0c0c0;
+  border: 3px outset #ffffff;
+}
+
+/* ---- Header ---- */
+.site-header {
+  background: #000080;
+  padding: 12px 0 6px;
+  text-align: center;
+  border-bottom: 3px inset #808080;
+}
+
+.logo-text {
+  display: inline-block;
+  font-family: Impact, "Arial Black", Arial, sans-serif;
+  font-size: 64px;
+  font-weight: 900;
+  letter-spacing: -2px;
+  background: linear-gradient(to bottom, #ff00ff, #ff8800, #ffff00);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1;
+  text-shadow: none;
+  filter: drop-shadow(3px 3px 0px rgba(0,0,0,0.8));
+  margin: 0;
+}
+
+.site-tagline {
+  color: #00ffff;
+  font-family: Arial, sans-serif;
+  font-size: 13px;
+  margin: 4px 0 0;
+  font-style: italic;
+  letter-spacing: 1px;
+}
+
+/* ---- Announcement bar ---- */
+.announcement {
+  background: #ffff00;
+  border-top: 2px solid #808080;
+  border-bottom: 2px solid #808080;
+  padding: 5px 10px;
+  text-align: center;
+  font-family: Arial, sans-serif;
+  font-size: 13px;
+  font-weight: bold;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.announcement-inner {
+  display: inline-block;
+  animation: marquee 18s linear infinite;
+}
+
+@keyframes marquee {
+  0%   { transform: translateX(120%); }
+  100% { transform: translateX(-120%); }
+}
+
+/* ---- Navigation bar ---- */
+.navbar {
+  background: #000080;
+  padding: 4px 0;
+  text-align: center;
+  font-family: Arial, sans-serif;
+  font-size: 12px;
+}
+
+.navbar a {
+  color: #ffffff;
+  text-decoration: none;
+  padding: 2px 10px;
+  border-right: 1px solid #4040a0;
+}
+
+.navbar a:last-child { border-right: none; }
+.navbar a:hover { color: #ffff00; text-decoration: underline; }
+
+/* ---- Content area ---- */
+.content {
+  padding: 14px 20px;
+  background: #ffffff;
+  border: 2px inset #808080;
+  margin: 10px;
+}
+
+.content-gray {
+  padding: 14px 20px;
+  margin: 10px;
+}
+
+/* ---- Section headers ---- */
+.section-title {
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 16px;
+  font-weight: bold;
+  color: #000080;
+  border-bottom: 2px solid #000080;
+  padding-bottom: 2px;
+  margin-bottom: 10px;
+}
+
+/* ---- Forms ---- */
+.retro-form label {
+  display: block;
+  font-family: Arial, sans-serif;
+  font-size: 12px;
+  font-weight: bold;
+  margin-bottom: 2px;
+}
+
+.retro-form input[type="text"],
+.retro-form input[type="email"],
+.retro-form input[type="password"] {
   width: 100%;
-  max-width: 720px;
-  background: white;
-  padding: 2em;
-  border-radius: 12px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
-  border: 1px solid #ddd;
+  padding: 3px 4px;
+  font-family: "Courier New", monospace;
+  font-size: 13px;
+  border: 2px inset #808080;
+  background: #ffffff;
+  color: #000000;
+  box-sizing: border-box;
+  margin-bottom: 10px;
 }
 
-h1 {
-  font-size: 24px;
-  font-weight: 600;
-  margin-bottom: 1.2em;
+.retro-form input:focus {
+  outline: 1px dotted #000080;
 }
 
-input[type="text"] {
-  width: 100%;
-  padding: 0.8em 1em;
-  font-size: 1em;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: #fff;
-  transition: border-color 0.2s;
-}
-
-input[type="text"]:focus {
-  outline: none;
-  border-color: var(--accent);
-}
-
-.result {
-  padding: 0.6em 0.8em;
-  border-bottom: 1px solid #eee;
+.retro-btn {
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 13px;
+  font-weight: bold;
+  background: #c0c0c0;
+  border: 2px outset #ffffff;
+  padding: 4px 18px;
   cursor: pointer;
-  transition: background 0.2s;
+  color: #000000;
 }
 
-.result:hover {
-  background: #f0f0f5;
+.retro-btn:hover {
+  background: #d0d0d0;
 }
 
-#results {
-  margin-top: 1.5em;
+.retro-btn:active {
+  border: 2px inset #808080;
 }
 
-#profile {
-  margin-top: 2em;
-  border-top: 1px solid #ddd;
-  padding-top: 1em;
-  font-size: 0.95em;
-  background: #fafafa;
-  border-radius: 8px;
+.retro-btn-primary {
+  background: #000080;
+  color: #ffffff;
+  border: 2px outset #4040c0;
 }
 
-pre {
-  white-space: pre-wrap;
-  word-break: break-word;
-  background: #f6f6f6;
-  padding: 1em;
-  border-radius: 6px;
-  border: 1px solid #ddd;
-  overflow-x: auto;
+.retro-btn-primary:hover {
+  background: #0000a0;
 }
 
-a {
-  color: var(--accent);
-  text-decoration: none;
+/* ---- Search box ---- */
+.search-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 10px;
 }
 
-a:hover {
-  text-decoration: underline;
+.search-input {
+  flex: 1;
+  padding: 3px 4px;
+  font-family: "Courier New", monospace;
+  font-size: 13px;
+  border: 2px inset #808080;
 }
 
-.card {
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  padding: 1.2em;
-  background: #fff;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
-  margin-top: 1em;
+/* ---- Results ---- */
+.result-item {
+  padding: 6px 8px;
+  border-bottom: 1px dashed #808080;
+  font-family: "Courier New", monospace;
+  font-size: 13px;
+  cursor: pointer;
+  color: #0000cc;
 }
 
-.card-header {
-  font-size: 1.05em;
-  margin-bottom: 0.5em;
-  color: #333;
+.result-item:hover {
+  background: #000080;
+  color: #ffffff;
 }
 
-.card-body ul {
-  list-style: disc;
-  margin: 0.5em 0 0;
-  padding-left: 1.5em;
+/* ---- Profile card ---- */
+.profile-card {
+  border: 2px groove #808080;
+  background: #f0f0f0;
+  padding: 10px 14px;
+  margin-top: 10px;
+  font-family: Arial, sans-serif;
+  font-size: 13px;
 }
 
-.card-body li {
-  margin-bottom: 0.25em;
+.profile-card h3 {
+  color: #800000;
+  font-size: 15px;
+  margin: 0 0 8px;
+  border-bottom: 1px solid #808080;
 }
 
-.card-body a {
-  color: var(--accent);
-  text-decoration: none;
+.profile-card .field-label {
+  font-weight: bold;
+  color: #000080;
 }
 
-.card-body a:hover {
-  text-decoration: underline;
+.profile-links a {
+  color: #0000cc;
+  font-size: 12px;
+  display: block;
+  margin: 2px 0;
 }
+
+/* ---- Hit counter ---- */
+.counter-section {
+  text-align: center;
+  padding: 8px 0;
+  font-family: Arial, sans-serif;
+  font-size: 12px;
+}
+
+.counter-digits {
+  display: inline-block;
+  font-family: "Courier New", monospace;
+  font-size: 20px;
+  font-weight: bold;
+  background: #000000;
+  color: #ff0000;
+  padding: 2px 8px;
+  border: 2px inset #404040;
+  letter-spacing: 3px;
+}
+
+/* ---- Footer ---- */
+.site-footer {
+  background: #000080;
+  color: #c0c0c0;
+  text-align: center;
+  padding: 8px 4px;
+  font-family: Arial, sans-serif;
+  font-size: 11px;
+  border-top: 2px inset #808080;
+}
+
+.site-footer a { color: #00ffff; }
+
+.badges {
+  text-align: center;
+  padding: 6px 0;
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.badge {
+  display: inline-block;
+  border: 2px outset #808080;
+  background: #c0c0c0;
+  padding: 3px 8px;
+  font-family: Arial, sans-serif;
+  font-size: 10px;
+  font-weight: bold;
+  color: #000000;
+}
+
+/* ---- Message boxes ---- */
+.msg-error {
+  background: #ff8080;
+  border: 2px inset #800000;
+  padding: 6px 10px;
+  font-family: Arial, sans-serif;
+  font-size: 12px;
+  font-weight: bold;
+  color: #800000;
+  margin-bottom: 10px;
+  display: none;
+}
+
+.msg-success {
+  background: #80ff80;
+  border: 2px inset #008000;
+  padding: 6px 10px;
+  font-family: Arial, sans-serif;
+  font-size: 12px;
+  font-weight: bold;
+  color: #004000;
+  margin-bottom: 10px;
+  display: none;
+}
+
+/* ---- Dividers ---- */
+hr.retro {
+  border: none;
+  border-top: 2px inset #808080;
+  margin: 10px 0;
+}
+
+.star-divider {
+  text-align: center;
+  color: #808080;
+  font-size: 12px;
+  margin: 6px 0;
+  letter-spacing: 4px;
+}
+
+/* ---- Account page ---- */
+.acct-header {
+  background: #800000;
+  color: #ffffff;
+  padding: 10px 14px;
+  font-family: Impact, Arial, sans-serif;
+  font-size: 22px;
+  letter-spacing: 1px;
+  word-break: break-all;
+}
+
+.link-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: Arial, sans-serif;
+  font-size: 12px;
+}
+
+.link-table th {
+  background: #000080;
+  color: #ffffff;
+  padding: 4px 8px;
+  text-align: left;
+}
+
+.link-table td {
+  padding: 4px 8px;
+  border-bottom: 1px solid #c0c0c0;
+}
+
+.link-table tr:nth-child(even) { background: #e8e8e8; }
+
+/* ---- Dashboard ---- */
+.user-greeting {
+  font-family: Impact, Arial, sans-serif;
+  font-size: 28px;
+  color: #000080;
+  margin: 0 0 6px;
+}
+
+.identity-box {
+  background: #000000;
+  color: #00ff00;
+  font-family: "Courier New", monospace;
+  font-size: 16px;
+  padding: 8px 12px;
+  border: 2px inset #404040;
+  margin: 10px 0;
+  word-break: break-all;
+}
+
+.spinner { display: none; }

@@ -12,6 +12,7 @@ import (
 
 type AdminHandler struct {
 	userStore   auth.UserStore
+	authService *auth.AuthService
 	store       store.Store
 	metrics     *monitoring.Metrics
 	authHandler AuthMiddleware // For middleware
@@ -35,9 +36,10 @@ type AuthMiddleware interface {
 }
 
 // NewAdminHandler creates a new admin handler
-func NewAdminHandler(userStore auth.UserStore, store store.Store, metrics *monitoring.Metrics, authHandler AuthMiddleware) *AdminHandler {
+func NewAdminHandler(userStore auth.UserStore, authService *auth.AuthService, store store.Store, metrics *monitoring.Metrics, authHandler AuthMiddleware) *AdminHandler {
 	return &AdminHandler{
 		userStore:   userStore,
+		authService: authService,
 		store:       store,
 		metrics:     metrics,
 		authHandler: authHandler,
@@ -66,21 +68,20 @@ func (h *AdminHandler) HandleStats(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 
-	// Get user counts
-	allUsers, totalUsers, err := h.userStore.ListUsers(ctx, &auth.UserFilters{Limit: 1})
+	// Get user counts — use the total returned by the count query, not len(rows)
+	_, totalUsers, err := h.userStore.ListUsers(ctx, &auth.UserFilters{Limit: 1})
 	if err != nil {
 		h.writeError(w, http.StatusInternalServerError, "Failed to get user count", err.Error())
 		return
 	}
-	_ = allUsers // We only need the count
 
-	activeUsers, _, err := h.userStore.ListUsers(ctx, &auth.UserFilters{IsActive: boolPtr(true), Limit: 1})
+	_, totalActive, err := h.userStore.ListUsers(ctx, &auth.UserFilters{IsActive: boolPtr(true), Limit: 1})
 	if err != nil {
 		h.writeError(w, http.StatusInternalServerError, "Failed to get active user count", err.Error())
 		return
 	}
 
-	adminUsers, _, err := h.userStore.ListUsers(ctx, &auth.UserFilters{IsAdmin: boolPtr(true), Limit: 1})
+	_, totalAdmins, err := h.userStore.ListUsers(ctx, &auth.UserFilters{IsAdmin: boolPtr(true), Limit: 1})
 	if err != nil {
 		h.writeError(w, http.StatusInternalServerError, "Failed to get admin user count", err.Error())
 		return
@@ -88,8 +89,8 @@ func (h *AdminHandler) HandleStats(w http.ResponseWriter, r *http.Request) {
 
 	stats := AdminStats{
 		UserCount:      totalUsers,
-		ActiveUsers:    len(activeUsers),
-		AdminUsers:     len(adminUsers),
+		ActiveUsers:    totalActive,
+		AdminUsers:     totalAdmins,
 		SystemUptime:   time.Since(time.Now().Add(-24 * time.Hour)), // Placeholder
 		DatabaseStatus: "healthy",
 		RedisStatus:    "healthy",
@@ -250,11 +251,21 @@ func (h *AdminHandler) createUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Basic validation
 	if req.Username == "" || req.Email == "" || req.Password == "" {
 		h.writeError(w, http.StatusBadRequest, "Username, email, and password required", "")
 		return
 	}
+	if len(req.Password) < 8 {
+		h.writeError(w, http.StatusBadRequest, "Password must be at least 8 characters", "")
+		return
+	}
+
+	hash, err := h.authService.HashPassword(req.Password)
+	if err != nil {
+		h.writeError(w, http.StatusInternalServerError, "Failed to process password", "")
+		return
+	}
+	req.Password = hash
 
 	user, err := h.userStore.CreateUser(r.Context(), &req)
 	if err != nil {
